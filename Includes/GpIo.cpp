@@ -2,7 +2,7 @@
 
 GpIo* g_pGpIo;
 
-GpIo::GpIo(SenseType sense_type, uint8_t gpio_pin = 12)
+GpIo::GpIo(SenseType sense_type)
 {
 	switch (sense_type) {
 		case SenseType::Float:
@@ -25,7 +25,7 @@ void GpIo::Init(SenseType sense_type)
 		switch (sense_type) {
 			case SenseType::Float:
 				bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_INPT);
-				std::cout << "GpIo::Init: Setting pin to IN." << std::endl;
+				std::cout << "GpIo::Init: Initialized GPIO pin." << std::endl;
 				IsInitialized = true;
 				break;
 			//case SenseType::Switch: // Untested
@@ -38,23 +38,30 @@ void GpIo::Init(SenseType sense_type)
 	}
 	else if (sense_type != SenseType::None) {
 		IsInitialized = false;
-		std::cout << "GpIo::Init: Failed to initalize the bcm2835 lib.\n" << std::endl;
+		std::cout << "GpIo::Init: Failed to initalize the bcm2835 lib." << std::endl;
 	}
 }
 
 void GpIo::TogglePin(PinState state) 
 {
 	if (state == PinState::In) {
-		std::cout << "GpIo::TogglePin: Toggling pin to IN.\n" << std::endl;
 		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_INPT);
+		std::cout << "GpIo::TogglePin: Toggled pin to IN." << std::endl;
 	}
 	else {
-		std::cout << "GpIo::TogglePin: Toggling pin to OUT.\n" << std::endl;
 		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_OUTP);
+		std::cout << "GpIo::TogglePin: Toggled pin to OUT." << std::endl;
 	}
 }
 
 void GpIo::Write(OutputState state)
 {
-	bcm2835_gpio_write(PIN, state);
+	if (state == OutputState::Low) {
+		bcm2835_gpio_write(PIN, LOW);
+		std::cout << "GpIo::Write: Set pin to pulldown." << std::endl;
+	}
+	else {
+		bcm2835_gpio_write(PIN, HIGH);
+		std::cout << "GpIo::Write: Set pin to pullup." << std::endl;
+	}
 }

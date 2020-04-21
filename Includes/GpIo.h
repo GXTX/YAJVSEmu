@@ -5,14 +5,14 @@
 #include <iostream>
 #include <bcm2835.h>
 
-#define PIN RPI_GPIO_P1_12
+#define PIN RPI_BPLUS_GPIO_J8_32
 
 class GpIo
 {
 public:
 	enum SenseType{
-		None = 0,
-		Float = 1,
+		None,
+		Float,
 		//Switch = 2,
 	};
 
@@ -28,7 +28,7 @@ public:
 
 	bool IsInitialized;
 
-	GpIo(SenseType sense_type, uint8_t gpio_pin);
+	GpIo(SenseType sense_type);
 	~GpIo();
 	void TogglePin(PinState state);
 	void Write(OutputState state);
