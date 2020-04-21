@@ -117,9 +117,15 @@ typedef struct {
 class JvsIo
 {
 public:
-	uint8_t* pSense = nullptr;				// Pointer to Sense line
+	enum SenseStates {
+		NotConnected,
+		Connected,
+	};
 
-	JvsIo(uint8_t* sense);
+	//uint8_t* pSense = nullptr;				// Pointer to Sense line
+	SenseStates pSense = SenseStates::NotConnected;
+
+	JvsIo(SenseStates sense);
 	size_t SendPacket(uint8_t* buffer);
 	size_t ReceivePacket(uint8_t* buffer);
 	uint8_t GetDeviceId();

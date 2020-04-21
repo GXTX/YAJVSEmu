@@ -35,15 +35,15 @@ void SerIo::Init(char *devicePath)
 
 int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 {
-	//std::printf("sending 0x%02X\n", bytes_to_write);
-	//for(uint8_t i = 0; i < sizeof(write_buffer); i++) {
-	//	std::printf(" %02X", write_buffer[i]);
-	//}
-	//std::cout << "\n" << std::endl;
+	std::printf("sending 0x%02X\n", bytes_to_write);
+	for(uint8_t i = 0; i < sizeof(write_buffer); i++) {
+		std::printf(" %02X", write_buffer[i]);
+	}
+	std::cout << "\n" << std::endl;
 
-	int ret = write(SerialHandler, write_buffer, bytes_to_write-1);
+	int ret = write(SerialHandler, write_buffer, bytes_to_write);
 
-	if (ret != bytes_to_write-1) {
+	if (ret != bytes_to_write) {
 		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, bytes_to_write);
 		return 0;
 	}

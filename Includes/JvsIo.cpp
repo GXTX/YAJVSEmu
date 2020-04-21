@@ -34,7 +34,7 @@ JvsIo* g_pJvsIo;
 #include <vector>
 
 // We will emulate SEGA 837-13551 IO Board
-JvsIo::JvsIo(uint8_t* sense)
+JvsIo::JvsIo(SenseStates sense)
 {
 	pSense = sense;
 
@@ -79,8 +79,7 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 
 	if (ensure_reset == 0xD9) {
 		// Set sense to 3 (2.5v) to instruct the baseboard we're ready.
-		uint8_t temp_sense = 3;
-		pSense = &temp_sense;
+		pSense = SenseStates::NotConnected;
 		ResponseBuffer.push_back(ReportCode::Handled); // Note : Without this, Chihiro software stops sending packets (but JVS V3 doesn't send this?)
 		DeviceId = 0;
 	}
@@ -94,8 +93,7 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 
 	std::printf("JvsIo::Jvs_Command_F1_SetDeviceId: %02X\n", DeviceId);
 
-	uint8_t temp_sense = 0;
-	pSense = &temp_sense; // Set sense to 0v
+	pSense = SenseStates::Connected; // Set sense to 0v
 	ResponseBuffer.push_back(ReportCode::Handled);
 
 	return 1;

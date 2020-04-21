@@ -16,7 +16,7 @@ int main()
 		return 1;
 	}
 
-	g_pJvsIo = new JvsIo(0);
+	g_pJvsIo = new JvsIo(JvsIo::SenseStates::NotConnected);
 
 	g_pSerIo = new SerIo(serialName);
 	if (!g_pSerIo->IsInitialized) {
@@ -31,6 +31,7 @@ int main()
 		g_pSerIo->Read(&read_buffer);
 
 		// TODO: If there's nothing in the buffer, don't bother sending it to receive and send...
+		// TODO: SendPacket checksum is 0x01 too much causing checksum failures on send.
 
 		int temp = g_pJvsIo->ReceivePacket(&read_buffer);
 		std::memset(&read_buffer, 0x00, sizeof(read_buffer));
@@ -38,19 +39,31 @@ int main()
 
 		if (ret > 0) {
 			g_pSerIo->Write(&write_buffer, ret);
-			//pSense
-			//0 not connected / no address
-			//1 connected with an address
 			// TODO: Only set the pin on a state change..
-			if(g_pJvsIo->pSense == 0) {
-				g_pGpIo->TogglePin(g_pGpIo->PinState::In);
+			if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
+				g_pGpIo->TogglePin(GpIo::PinState::In);
 			}
 			else {
-				g_pGpIo->TogglePin(g_pGpIo->PinState::Out);
-				g_pGpIo->Write(g_pGpIo->OutputState::Low);
+				g_pGpIo->TogglePin(GpIo::PinState::Out);
+				g_pGpIo->Write(GpIo::OutputState::Low);
 			}
 		}
 	}
 
 	return 0;
 }
+
+/*
+sample data from chihiro
+0xE0 0xFF 0x03 0xF0 0xD9 0xCB <-- valid reset command
+0xE0 0xFF 0x03 0xF1 0x01 0xF4 <-- valid setid
+*/
+
+/*
+openjvs3 logs
+Reading..
+ E0 00 03 01 01 05 00 00 <-- chihiro sends reset packet and we respond with
+ E0 00 1A 01 01 11 01 20 <-- unknown
+ E0 00 37 01 01 4F 70 65 <-- unknwon
+ E0 00 1C 01 01 00 00 00 <-- looks like a status okay reply but not using 0x03???
+*/
