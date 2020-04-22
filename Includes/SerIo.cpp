@@ -41,7 +41,7 @@ int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 	}
 	std::cout << "\n" << std::endl;
 
-	int ret = write(SerialHandler, write_buffer, bytes_to_write);
+	int ret = write(SerialHandler, write_buffer, sizeof(write_buffer));
 
 	if (ret != bytes_to_write) {
 		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, bytes_to_write);

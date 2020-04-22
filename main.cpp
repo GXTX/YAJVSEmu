@@ -38,8 +38,6 @@ int main()
 		int ret = g_pJvsIo->SendPacket(&write_buffer);
 
 		if (ret > 0) {
-			g_pSerIo->Write(&write_buffer, ret);
-			// TODO: Only set the pin on a state change..
 			if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
 				g_pGpIo->TogglePin(GpIo::PinState::In);
 			}
@@ -47,12 +45,18 @@ int main()
 				g_pGpIo->TogglePin(GpIo::PinState::Out);
 				g_pGpIo->Write(GpIo::OutputState::Low);
 			}
+			g_pSerIo->Write(&write_buffer, ret);
+			std::memset(&write_buffer, 0x00, sizeof(write_buffer));
+			// TODO: Only set the pin on a state change..
 		}
 	}
 
 	return 0;
 }
 
+/**
+HEADER | NODE | NUMOFBYTES INC COMMAND + CHECKSUM | COMMAND | ARGS | CHKSUM
+**/
 /*
 sample data from chihiro
 0xE0 0xFF 0x03 0xF0 0xD9 0xCB <-- valid reset command
