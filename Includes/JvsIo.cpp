@@ -368,6 +368,7 @@ size_t JvsIo::ReceivePacket(uint8_t* buffer)
 
 void JvsIo::SendByte(uint8_t* &buffer, uint8_t value)
 {
+	printf(" val: %02X ", value);
 	*buffer++ = value;
 }
 
@@ -406,12 +407,16 @@ size_t JvsIo::SendPacket(uint8_t* buffer)
 	// Calculate the checksum
 	uint8_t packet_checksum = header.target + header.count;
 
+	printf("sum1: %02X", packet_checksum);
+
 	// Encode the payload data
 	for (size_t i = 0; i < ResponseBuffer.size(); i++) {
 		uint8_t value = ResponseBuffer[i];
 		SendEscapedByte(buffer, value);
 		packet_checksum += value;
 	}
+
+	printf(" sum2: %02X \n", packet_checksum);
 
 	// Write the checksum to the last byte
 	SendEscapedByte(buffer, packet_checksum);

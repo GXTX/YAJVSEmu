@@ -14,6 +14,9 @@
 #include <sys/ioctl.h>
 #include <linux/serial.h>
 
+//#include <SerialStream.h>
+//using namespace LibSerial;
+
 class SerIo
 {
 public:
@@ -29,7 +32,7 @@ public:
 	SerIo(char *devicePath);
 	~SerIo();
 
-	int Read(uint8_t *read_buffer);
+	int Read(std::vector<uint8_t> &ReadBuffer);
 	int Write(uint8_t *write_buffer, uint8_t bytes_to_write);
 private:
 	int SerialHandler;

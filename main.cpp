@@ -27,27 +27,32 @@ int main()
 	uint8_t read_buffer;
 	uint8_t write_buffer;
 
-	while(1) {
-		g_pSerIo->Read(&read_buffer);
+	std::vector<uint8_t> ReadBuffer;
+	std::vector<uint8_t> WriteBuffer;
 
-		// TODO: If there's nothing in the buffer, don't bother sending it to receive and send...
-		// TODO: SendPacket checksum is 0x01 too much causing checksum failures on send.
+	while (1) {
+		g_pSerIo->Read(ReadBuffer);
 
-		int temp = g_pJvsIo->ReceivePacket(&read_buffer);
-		std::memset(&read_buffer, 0x00, sizeof(read_buffer));
-		int ret = g_pJvsIo->SendPacket(&write_buffer);
+		if (ReadBuffer.size() > 0) {
+			int temp = g_pJvsIo->ReceivePacket(&read_buffer);
+			ReadBuffer.clear();
+			// TODO: SendPacket checksum is 0x01 too much causing checksum failures on send.
+			// TODO: Check if receivepacket successfully processed then pass off
+			// TODO: if a checksum failure has occured, do we need to send a message to mainboard? yes?
+			int ret = g_pJvsIo->SendPacket(&write_buffer);
 
-		if (ret > 0) {
-			if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
-				g_pGpIo->TogglePin(GpIo::PinState::In);
+			if (ret > 0) {
+				if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
+					g_pGpIo->TogglePin(GpIo::PinState::In);
+				}
+				else {
+					g_pGpIo->TogglePin(GpIo::PinState::Out);
+					g_pGpIo->Write(GpIo::OutputState::Low);
+				}
+				g_pSerIo->Write(&write_buffer, ret);
+				std::memset(&write_buffer, 0x00, sizeof(write_buffer));
+				// TODO: Only set the pin on a state change..
 			}
-			else {
-				g_pGpIo->TogglePin(GpIo::PinState::Out);
-				g_pGpIo->Write(GpIo::OutputState::Low);
-			}
-			g_pSerIo->Write(&write_buffer, ret);
-			std::memset(&write_buffer, 0x00, sizeof(write_buffer));
-			// TODO: Only set the pin on a state change..
 		}
 	}
 

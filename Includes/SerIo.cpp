@@ -51,10 +51,12 @@ int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 	return 1;
 }
 
-int SerIo::Read(uint8_t *read_buffer)
+int SerIo::Read(std::vector<uint8_t> &ReadBuffer)
 {
 	fd_set fd_serial;
 	struct timeval tv;
+	uint8_t temp_buffer[512];
+	int bytes,n;
 
 	int serial = SerialHandler;
 
@@ -82,31 +84,25 @@ int SerIo::Read(uint8_t *read_buffer)
 		return StatusCode::SerialReadError;
 	}
 
-	uint8_t temp_buffer[256];
-	int bytes,n;
-	
 	ioctl(serial, FIONREAD, &bytes);
 
 	if (!bytes) {
 		return 0;
 	}
 
-	n = read(serial, read_buffer, bytes);
+	// TODO: can i read directly into ReadBuffer?
+	n = read(serial, temp_buffer, bytes);
 
-	if (n < 0) {
+	if (n < 0 || n == 0) {
 		// TODO: would n ever be less than 0?
 	}
-	else if (n == 0) {
-		// TODO: Why would n be equal to 0 if select told us we're good?
-	}
 	else {
-		//std::cout << "SerIo::Read:";
-		//for (uint8_t i = 0; i < n; i++) {
-		//	read_buffer[i] = temp_buffer[i]; // wouldn't it be better to just memcpy?
-		//std::memcpy(read_buffer, &temp_buffer, bytes);
-		//	std::printf(" %02X", read_buffer[i]);
-		//}
-		//std::cout << "\n";
+		std::cout << "SerIo::Read:";
+		for (int i = 0; i < bytes; i++) {
+			ReadBuffer.push_back(temp_buffer[i]);
+			std::printf(" %02X", ReadBuffer.at(i));
+		}
+		std::cout << "\n";
 	}
 
 	return 0;
