@@ -41,16 +41,18 @@ int main()
 			int ret = g_pJvsIo->SendPacket(WriteBuffer.data());
 
 			if (ret > 0) {
-				if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
-					g_pGpIo->TogglePin(GpIo::PinState::In);
-				}
-				else {
-					g_pGpIo->TogglePin(GpIo::PinState::Out);
-					g_pGpIo->Write(GpIo::OutputState::Low);
+				if(g_pJvsIo->pSenseChange){
+					if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
+						g_pGpIo->TogglePin(GpIo::PinState::In);
+					}
+					else {
+						g_pGpIo->TogglePin(GpIo::PinState::Out);
+						g_pGpIo->Write(GpIo::OutputState::Low);
+					}
+					g_pJvsIo->pSenseChange = false;
 				}
 				g_pSerIo->Write(WriteBuffer.data(), ret);
 				WriteBuffer.clear();
-				// TODO: Only set the pin on a state change..
 			}
 		}
 	}

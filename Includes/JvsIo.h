@@ -81,7 +81,7 @@ typedef struct {
 } jvs_switch_inputs_t;
 
 typedef struct {
-	uint16_t value = 0x8000;
+	uint16_t value = 0x0000;
 
 	uint8_t GetByte0() {
 		return (value >> 8) & 0xFF;
@@ -94,7 +94,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t coins = 0;
-	uint8_t status = 0;
+	uint8_t status = 2;
 
 	uint8_t GetByte0() {
 		uint8_t value = 0;
@@ -124,6 +124,7 @@ public:
 
 	//uint8_t* pSense = nullptr;				// Pointer to Sense line
 	SenseStates pSense = SenseStates::NotConnected;
+	bool pSenseChange;
 
 	JvsIo(SenseStates sense);
 	size_t SendPacket(uint8_t* buffer);

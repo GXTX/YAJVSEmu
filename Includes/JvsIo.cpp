@@ -30,7 +30,7 @@
 
 JvsIo* g_pJvsIo;
 
-#define DEBUG_JVS_PACKETS
+//#define DEBUG_JVS_PACKETS
 #include <vector>
 
 // We will emulate SEGA 837-13551 IO Board
@@ -43,7 +43,7 @@ JvsIo::JvsIo(SenseStates sense)
 	JvsVersion = 0x20;
 	CommunicationVersion = 0x10;
 
-	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551";
+	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.0";
 }
 
 /*void JvsIo::Update()
@@ -75,11 +75,10 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 {
 	uint8_t ensure_reset = data[1];
 
-	std::printf("JvsIo::Jvs_Command_F0_Reset: %02X\n", ensure_reset);
-
 	if (ensure_reset == 0xD9) {
 		// Set sense to 3 (2.5v) to instruct the baseboard we're ready.
 		pSense = SenseStates::NotConnected;
+		pSenseChange = true;
 		ResponseBuffer.push_back(ReportCode::Handled); // Note : Without this, Chihiro software stops sending packets (but JVS V3 doesn't send this?)
 		DeviceId = 0;
 	}
@@ -91,9 +90,8 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 	// Set Address
 	DeviceId = data[1];
 
-	std::printf("JvsIo::Jvs_Command_F1_SetDeviceId: %02X\n", DeviceId);
-
 	pSense = SenseStates::Connected; // Set sense to 0v
+	pSenseChange = true;
 	ResponseBuffer.push_back(ReportCode::Handled);
 
 	return 1;

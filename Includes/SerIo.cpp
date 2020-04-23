@@ -29,12 +29,13 @@ SerIo::~SerIo()
 
 int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 {
+#ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
 	for(uint8_t i = 0; i < bytes_to_write; i++) {
 		std::printf(" %02X", write_buffer[i]);
 	}
 	std::cout << "\n";
-
+#endif
 	int ret = write(SerialHandler, write_buffer, bytes_to_write);
 
 	if (ret != bytes_to_write) {
@@ -89,11 +90,13 @@ int SerIo::Read(uint8_t *buffer)
 		// TODO: would n ever be less than 0?
 	}
 	else {
+#ifdef DEBUG_SERIAL
 		std::cout << "SerIo::Read:";
 		for (int i = 0; i < bytes; i++) {
 			std::printf(" %02X", buffer[i]);
 		}
 		std::cout << "\n";
+#endif
 	}
 
 	return 0;
