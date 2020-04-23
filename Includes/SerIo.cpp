@@ -9,21 +9,10 @@ SerIo* g_pSerIo;
 
 SerIo::SerIo(char *devicePath)
 {
-	Init(devicePath);
-}
-
-SerIo::~SerIo()
-{
-	close(SerialHandler);
-}
-
-// TODO: Move this back in the constructor, we don't care about return val
-void SerIo::Init(char *devicePath)
-{
 	SerialHandler = open(devicePath, O_RDWR | O_NOCTTY | O_SYNC | O_NDELAY);
 
 	if (SerialHandler < 0) {
-		std::printf("SerIo::Init - Failed to open %s.\n", devicePath);
+		std::printf("SerIo::Init: Failed to open %s.\n", devicePath);
 		IsInitialized = false;
 	}
 	else {
@@ -33,13 +22,18 @@ void SerIo::Init(char *devicePath)
 	}
 }
 
+SerIo::~SerIo()
+{
+	close(SerialHandler);
+}
+
 int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 {
-	std::printf("sending 0x%02X\n", bytes_to_write);
-	for(uint8_t i = 0; i < sizeof(write_buffer); i++) {
+	std::cout << "SerIo::Write:";
+	for(uint8_t i = 0; i < bytes_to_write; i++) {
 		std::printf(" %02X", write_buffer[i]);
 	}
-	std::cout << "\n" << std::endl;
+	std::cout << "\n";
 
 	int ret = write(SerialHandler, write_buffer, bytes_to_write);
 
@@ -89,15 +83,7 @@ int SerIo::Read(uint8_t *buffer)
 		return 0;
 	}
 
-	// TODO: can i read directly into ReadBuffer?
 	n = read(serial, buffer, bytes);
-
-	std::cout << "SerIo::Read:";
-	for (int i = 0; i < bytes; i++) {
-		std::printf(" %02X", buffer[i]);
-	}
-	std::cout << "\n";
-/* 	n = read(serial, temp_buffer, bytes);
 
 	if (n < 0 || n == 0) {
 		// TODO: would n ever be less than 0?
@@ -105,11 +91,10 @@ int SerIo::Read(uint8_t *buffer)
 	else {
 		std::cout << "SerIo::Read:";
 		for (int i = 0; i < bytes; i++) {
-			ReadBuffer.push_back(temp_buffer[i]);
-			std::printf(" %02X", ReadBuffer.at(i));
+			std::printf(" %02X", buffer[i]);
 		}
 		std::cout << "\n";
-	} */
+	}
 
 	return 0;
 }

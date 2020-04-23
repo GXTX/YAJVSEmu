@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 3.10)
 project(UsherJVS)
 
 find_package(Threads REQUIRED)
-#find_package(PkgConfig REQUIRED)
-
-#pkg_check_modules(SERIAL libserial)
 
 include_directories(${THREAD_INLCUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
 

@@ -8,14 +8,10 @@
 #include <algorithm>
 
 #include <fcntl.h>
-//#include <string.h>
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <linux/serial.h>
-
-//#include <SerialStream.h>
-//using namespace LibSerial;
 
 class SerIo
 {
@@ -37,7 +33,6 @@ public:
 private:
 	int SerialHandler;
 
-	void Init(char *devicePath);
 	int SetAttributes(int SerialHandler, int baud);
 	int SetLowLatency(int SerialHandler);
 };
