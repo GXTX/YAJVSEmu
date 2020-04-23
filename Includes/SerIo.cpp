@@ -41,7 +41,7 @@ int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 	}
 	std::cout << "\n" << std::endl;
 
-	int ret = write(SerialHandler, write_buffer, sizeof(write_buffer));
+	int ret = write(SerialHandler, write_buffer, bytes_to_write);
 
 	if (ret != bytes_to_write) {
 		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, bytes_to_write);
@@ -51,11 +51,10 @@ int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 	return 1;
 }
 
-int SerIo::Read(std::vector<uint8_t> &ReadBuffer)
+int SerIo::Read(uint8_t *buffer)
 {
 	fd_set fd_serial;
 	struct timeval tv;
-	uint8_t temp_buffer[512];
 	int bytes,n;
 
 	int serial = SerialHandler;
@@ -91,7 +90,14 @@ int SerIo::Read(std::vector<uint8_t> &ReadBuffer)
 	}
 
 	// TODO: can i read directly into ReadBuffer?
-	n = read(serial, temp_buffer, bytes);
+	n = read(serial, buffer, bytes);
+
+	std::cout << "SerIo::Read:";
+	for (int i = 0; i < bytes; i++) {
+		std::printf(" %02X", buffer[i]);
+	}
+	std::cout << "\n";
+/* 	n = read(serial, temp_buffer, bytes);
 
 	if (n < 0 || n == 0) {
 		// TODO: would n ever be less than 0?
@@ -103,7 +109,7 @@ int SerIo::Read(std::vector<uint8_t> &ReadBuffer)
 			std::printf(" %02X", ReadBuffer.at(i));
 		}
 		std::cout << "\n";
-	}
+	} */
 
 	return 0;
 }

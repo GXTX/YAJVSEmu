@@ -127,7 +127,7 @@ public:
 
 	JvsIo(SenseStates sense);
 	size_t SendPacket(uint8_t* buffer);
-	size_t ReceivePacket(uint8_t* buffer);
+	size_t ReceivePacket(uint8_t *buffer);
 	uint8_t GetDeviceId();
 	void Update();
 

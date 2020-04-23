@@ -8,7 +8,10 @@ int main()
 {
 	// TODO: Just use a std::string or something..
 	char serialName[13];
-	std::sprintf(serialName, "/dev/ttyUSB4");
+	std::sprintf(serialName, "/dev/ttyUSB0");
+
+	std::vector<uint8_t> ReadBuffer;
+	std::vector<uint8_t> WriteBuffer;
 
 	g_pGpIo = new GpIo(GpIo::SenseType::Float); // Some systems require Sense pin support so run this before anything else.
 	if (!g_pGpIo->IsInitialized) {
@@ -24,22 +27,18 @@ int main()
 		return 1;
 	}
 
-	uint8_t read_buffer;
-	uint8_t write_buffer;
-
-	std::vector<uint8_t> ReadBuffer;
-	std::vector<uint8_t> WriteBuffer;
-
 	while (1) {
-		g_pSerIo->Read(ReadBuffer);
+		ReadBuffer.resize(512);
+		g_pSerIo->Read(ReadBuffer.data());
 
 		if (ReadBuffer.size() > 0) {
-			int temp = g_pJvsIo->ReceivePacket(&read_buffer);
+			int temp = g_pJvsIo->ReceivePacket(ReadBuffer.data());
+			// TODO: Why without this does it fault?
+			WriteBuffer.resize(ReadBuffer.size());
 			ReadBuffer.clear();
-			// TODO: SendPacket checksum is 0x01 too much causing checksum failures on send.
 			// TODO: Check if receivepacket successfully processed then pass off
 			// TODO: if a checksum failure has occured, do we need to send a message to mainboard? yes?
-			int ret = g_pJvsIo->SendPacket(&write_buffer);
+			int ret = g_pJvsIo->SendPacket(WriteBuffer.data());
 
 			if (ret > 0) {
 				if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
@@ -49,8 +48,8 @@ int main()
 					g_pGpIo->TogglePin(GpIo::PinState::Out);
 					g_pGpIo->Write(GpIo::OutputState::Low);
 				}
-				g_pSerIo->Write(&write_buffer, ret);
-				std::memset(&write_buffer, 0x00, sizeof(write_buffer));
+				g_pSerIo->Write(WriteBuffer.data(), ret);
+				WriteBuffer.clear();
 				// TODO: Only set the pin on a state change..
 			}
 		}

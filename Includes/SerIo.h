@@ -32,7 +32,7 @@ public:
 	SerIo(char *devicePath);
 	~SerIo();
 
-	int Read(std::vector<uint8_t> &ReadBuffer);
+	int Read(uint8_t *buffer);
 	int Write(uint8_t *write_buffer, uint8_t bytes_to_write);
 private:
 	int SerialHandler;
