@@ -14,9 +14,6 @@ add_executable(${PROJECT_NAME}
 	Includes/JvsIo.cpp
 	Includes/SerIo.cpp
 	Includes/GpIo.cpp
-)
-
-add_executable("SDL-Testing"
 	Includes/SdlIo.cpp
 )
 
@@ -26,8 +23,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} bcm2835)
-
-target_compile_options("SDL-Testing" PRIVATE -Wall -Wextra -Wpedantic)
-
-target_link_libraries("SDL-Testing" ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} bcm2835)

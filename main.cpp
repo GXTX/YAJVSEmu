@@ -1,8 +1,10 @@
 #include "Includes/JvsIo.h"
 #include "Includes/SerIo.h"
 #include "Includes/GpIo.h"
+#include "Includes/SdlIo.h"
 
 #include <iostream>
+#include <thread>
 
 int main()
 {
@@ -26,6 +28,10 @@ int main()
 		std::cout << "Dying.\n";
 		return 1;
 	}
+
+	// TODO: is there a better way to do this?
+	g_pSdlIo = new SdlIo(&g_pJvsIo->Inputs);
+	std::thread InputThread(&SdlIo::Loop, std::ref(g_pSdlIo));
 
 	while (1) {
 		ReadBuffer.resize(512);
@@ -59,21 +65,3 @@ int main()
 
 	return 0;
 }
-
-/**
-HEADER | NODE | NUMOFBYTES INC COMMAND + CHECKSUM | COMMAND | ARGS | CHKSUM
-**/
-/*
-sample data from chihiro
-0xE0 0xFF 0x03 0xF0 0xD9 0xCB <-- valid reset command
-0xE0 0xFF 0x03 0xF1 0x01 0xF4 <-- valid setid
-*/
-
-/*
-openjvs3 logs
-Reading..
- E0 00 03 01 01 05 00 00 <-- chihiro sends reset packet and we respond with
- E0 00 1A 01 01 11 01 20 <-- unknown
- E0 00 37 01 01 4F 70 65 <-- unknwon
- E0 00 1C 01 01 00 00 00 <-- looks like a status okay reply but not using 0x03???
-*/

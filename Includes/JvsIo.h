@@ -125,6 +125,7 @@ public:
 	//uint8_t* pSense = nullptr;				// Pointer to Sense line
 	SenseStates pSense = SenseStates::NotConnected;
 	bool pSenseChange;
+	jvs_input_states_t Inputs;
 
 	JvsIo(SenseStates sense);
 	size_t SendPacket(uint8_t* buffer);
@@ -203,7 +204,6 @@ private:
 	uint8_t JvsVersion;
 	uint8_t CommunicationVersion;
 	std::string BoardID;
-	jvs_input_states_t Inputs;
 };
 
 extern JvsIo* g_pJvsIo;
