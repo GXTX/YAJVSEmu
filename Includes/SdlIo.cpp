@@ -5,7 +5,6 @@ SdlIo* g_pSdlIo;
 SdlIo::SdlIo(jvs_input_states_t *jvs_inputs)
 {
 	Inputs = jvs_inputs;
-	Inputs->switches.player[0].button[0] = 1;
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	sgc = SDL_GameControllerOpen(0);
@@ -45,7 +44,7 @@ void SdlIo::ButtonPressHandler(SDL_ControllerButtonEvent *button)
 		case SDL_CONTROLLER_BUTTON_B: Inputs->switches.player[0].button[1] = button->state; break;
 		case SDL_CONTROLLER_BUTTON_X: Inputs->switches.player[0].button[2] = button->state; break;
 		case SDL_CONTROLLER_BUTTON_Y: Inputs->switches.player[0].button[3] = button->state; break;
-		case SDL_CONTROLLER_BUTTON_BACK: Inputs->switches.system = button->state; break;
+		case SDL_CONTROLLER_BUTTON_BACK: Inputs->switches.system.test = button->state; break;
 		case SDL_CONTROLLER_BUTTON_GUIDE: Inputs->switches.player[0].service = button->state; break;
 		case SDL_CONTROLLER_BUTTON_START: Inputs->switches.player[0].start = button->state; break;
 		case SDL_CONTROLLER_BUTTON_LEFTSTICK: Inputs->switches.player[0].button[4] = button->state; break;

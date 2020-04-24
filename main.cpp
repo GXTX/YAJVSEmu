@@ -29,9 +29,8 @@ int main()
 		return 1;
 	}
 
-	// TODO: is there a better way to do this?
-	g_pSdlIo = new SdlIo(&g_pJvsIo->Inputs);
-	std::thread InputThread(&SdlIo::Loop, std::ref(g_pSdlIo));
+	std::shared_ptr<SdlIo> InputHandler (std::make_shared<SdlIo>(&g_pJvsIo->Inputs));
+	std::thread InputThread(&SdlIo::Loop, InputHandler);
 
 	while (1) {
 		ReadBuffer.resize(512);
