@@ -13,15 +13,15 @@ public:
 	enum SenseType{
 		None,
 		Float,
-		//Switch = 2,
+		//Switch,
 	};
 
-	enum PinState{
+	enum PinMode{
 		In,
 		Out,
 	};
 
-	enum OutputState{
+	enum PinState{
 		Low,
 		High,
 	};
@@ -30,11 +30,9 @@ public:
 
 	GpIo(SenseType sense_type);
 	~GpIo();
-	void TogglePin(PinState state);
-	void Write(OutputState state);
+	void SetMode(PinMode state);
+	void Write(PinState state);
 private:
-	void Init(SenseType sense_type);
-	// TODO: Add privates 
 };
 
 extern GpIo* g_pGpIo;

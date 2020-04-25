@@ -47,12 +47,20 @@ int main()
 
 			if (ret > 0) {
 				if(g_pJvsIo->pSenseChange){
+/**
+Rationale behind GPIO PinModes:
+JVS spec has 3 modes, 5v (nothing attached) / 2.5v (waiting for ID) / 0v (connected).
+With 4 diodes in parallel (to GND) we bring down the 5v to ~2.5v to signal the JVS controller we're ready
+for an ID. Setting PinMode::In allows us to not touch the 2.5v and we then switch to
+PinMode::Out / PinState::Low to bring down the voltage to 0v signaling we have an ID and we're ready.
+If we were to set PinMode::Out / PinState::High it raises the voltage to ~2.9v with the diodes.
+**/
 					if(g_pJvsIo->pSense == JvsIo::SenseStates::NotConnected) {
-						g_pGpIo->TogglePin(GpIo::PinState::In);
+						g_pGpIo->SetMode(GpIo::PinMode::In);
 					}
 					else {
-						g_pGpIo->TogglePin(GpIo::PinState::Out);
-						g_pGpIo->Write(GpIo::OutputState::Low);
+						g_pGpIo->SetMode(GpIo::PinMode::Out);
+						g_pGpIo->Write(GpIo::PinState::Low);
 					}
 					g_pJvsIo->pSenseChange = false;
 				}
