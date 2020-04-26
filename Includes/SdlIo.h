@@ -11,17 +11,18 @@
 class SdlIo
 {
 public:
+	jvs_input_states_t *Inputs;
+
+	SdlIo(jvs_input_states_t *jvs_inputs);
+	// TODO: Properly close the device.
+	//~SdlIo();
+	void Loop();
+private:
 	enum AxisType {
 		Stick,
 		Trigger,
 	};
 
-	jvs_input_states_t *Inputs;
-
-	SdlIo(jvs_input_states_t *jvs_inputs);
-	//~SdlIo();
-	void Loop();
-private:
 	SDL_GameController *sgc;
 	SDL_Event event;
 
