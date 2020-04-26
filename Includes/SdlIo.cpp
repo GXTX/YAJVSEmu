@@ -70,14 +70,14 @@ void SdlIo::AxisMovementHandler(SDL_ControllerAxisEvent *axis)
 	}
 }
 
-int SdlIo::ScaledAxisMovement(int16_t value, AxisType type)
+uint16_t SdlIo::ScaledAxisMovement(int16_t value, AxisType type)
 {
 	float max = SDL_MAX_SINT16;
 	// NOTE: SDL2 limits trigger lower range to 0
 	float min = (type == AxisType::Trigger ? 0 : SDL_MIN_SINT16);
 
-	double scaled_value = (value - min) / (max - min);
-	int scaled_return = scaled_value * 0xFFFF; //0xFF
+	float scaled_value = (value - min) / (max - min);
+	uint16_t scaled_return = scaled_value * 0xFFFF; //0xFF
 
 	return scaled_return;
 }

@@ -28,7 +28,7 @@ private:
 
 	void ButtonPressHandler(SDL_ControllerButtonEvent *button);
 	void AxisMovementHandler(SDL_ControllerAxisEvent *axis);
-	int ScaledAxisMovement(int16_t value, AxisType type);
+	uint16_t ScaledAxisMovement(int16_t value, AxisType type);
 };
 
 extern SdlIo* g_pSdlIo;
