@@ -25,13 +25,6 @@
 // ******************************************************************
 
 #include "JvsIo.h"
-#include <cstdio>
-#include <string>
-
-JvsIo* g_pJvsIo;
-
-//#define DEBUG_JVS_PACKETS
-#include <vector>
 
 // We will emulate SEGA 837-13551 IO Board
 JvsIo::JvsIo(SenseStates sense)
@@ -45,26 +38,6 @@ JvsIo::JvsIo(SenseStates sense)
 
 	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.0";
 }
-
-/*void JvsIo::Update()
-{
-	// Handle coin input
-	static bool previousCoinButtonsState = false;
-	bool currentCoinButtonState = GetAsyncKeyState('5');
-	if (currentCoinButtonState && !previousCoinButtonsState) {
-		Inputs.coins[0].coins += 1;
-	}
-	previousCoinButtonsState = currentCoinButtonState;
-
-	// TODO: Update Jvs inputs based on user configuration
-	// For now, hardcode the inputs for the game we are currently testing (Ollie King)
-	Inputs.switches.player[0].start = GetAsyncKeyState('1');                                                        // Start
-	Inputs.analog[1].value = GetAsyncKeyState(VK_LEFT) ? 0x9000 : (GetAsyncKeyState(VK_RIGHT) ? 0x7000 : 0x8000);   // Board Swing
-	Inputs.switches.player[0].up = GetAsyncKeyState(VK_UP);                                                         // Board Front
-	Inputs.switches.player[0].down = GetAsyncKeyState(VK_DOWN);                                                     // Board Rear
-	Inputs.switches.player[0].button[0] = GetAsyncKeyState('A');                                                    // Left Button
-	Inputs.switches.player[0].button[1] = GetAsyncKeyState('S');                                                    // Right Button
-}*/
 
 uint8_t JvsIo::GetDeviceId()
 {

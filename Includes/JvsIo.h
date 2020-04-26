@@ -25,11 +25,7 @@
 #ifndef JVSIO_H
 #define JVSIO_H
 
-#include <cstdint>
 #include <vector>
-#include <string>
-
-#include <cstring>
 #include <iostream>
 
 typedef struct {
@@ -77,16 +73,16 @@ typedef struct {
 
 typedef struct {
 	bool test = false;
-	bool tilt1 = false;
-	bool tilt2 = false;
-	bool tilt3 = false;
+	bool tilt_1 = false;
+	bool tilt_2 = false;
+	bool tilt_3 = false;
 
 	uint8_t GetByte0() {
 		uint8_t value = 0;
 		value |= test      ? 1 << 7 : 0;
-		value |= tilt1     ? 1 << 6 : 0;
-		value |= tilt2     ? 1 << 5 : 0;
-		value |= tilt3     ? 1 << 4 : 0;
+		value |= tilt_1     ? 1 << 6 : 0;
+		value |= tilt_2     ? 1 << 5 : 0;
+		value |= tilt_3     ? 1 << 4 : 0;
 		return value;
 	}
 } jvs_switch_system_inputs_t;
@@ -221,7 +217,5 @@ private:
 	uint8_t CommunicationVersion;
 	std::string BoardID;
 };
-
-extern JvsIo* g_pJvsIo;
 
 #endif

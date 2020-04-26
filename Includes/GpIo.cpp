@@ -1,7 +1,5 @@
 #include "GpIo.h"
 
-GpIo* g_pGpIo;
-
 GpIo::GpIo(SenseType sense_type)
 {
 	if (bcm2835_init()) {

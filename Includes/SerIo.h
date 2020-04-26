@@ -1,11 +1,7 @@
 #ifndef SERIO_H
 #define SERIO_H
 
-//#include <cstdint>
-#include <vector>
-#include <string>
 #include <iostream>
-#include <algorithm>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -17,13 +13,12 @@ class SerIo
 {
 public:
 	enum StatusCode {
-		StatusOkay = 0,
-		SerialTimeout = 1,
-		SerialReadError = 2,
+		StatusOkay,
+		SerialTimeout,
+		SerialReadError,
 	};
 
 	bool IsInitialized;
-	std::vector<uint8_t> ReceiveBuffer;
 
 	SerIo(char *devicePath);
 	~SerIo();
@@ -33,10 +28,8 @@ public:
 private:
 	int SerialHandler;
 
-	int SetAttributes(int SerialHandler, int baud);
+	void SetAttributes(int SerialHandler, int baud);
 	int SetLowLatency(int SerialHandler);
 };
-
-extern SerIo* g_pSerIo;
 
 #endif

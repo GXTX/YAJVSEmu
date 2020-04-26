@@ -1,10 +1,10 @@
+#include <iostream>
+#include <thread>
+
 #include "Includes/JvsIo.h"
 #include "Includes/SerIo.h"
 #include "Includes/GpIo.h"
 #include "Includes/SdlIo.h"
-
-#include <iostream>
-#include <thread>
 
 int main()
 {
@@ -34,7 +34,7 @@ int main()
 	// Spawn lone SDL2 input thread.
 	std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs)).detach();
 
-	while (1) {
+	while (true) {
 		ReadBuffer.resize(512);
 		SerialHandler->Read(ReadBuffer.data());
 

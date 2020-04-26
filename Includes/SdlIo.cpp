@@ -1,7 +1,5 @@
 #include "SdlIo.h"
 
-SdlIo* g_pSdlIo;
-
 SdlIo::SdlIo(jvs_input_states_t *jvs_inputs)
 {
 	Inputs = jvs_inputs;
@@ -17,9 +15,14 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs)
 	}
 }
 
+SdlIo::~SdlIo()
+{
+	SDL_GameControllerClose(sgc);
+}
+
 void SdlIo::Loop()
 {
-	while (1) {
+	while (true) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_CONTROLLERBUTTONDOWN:
@@ -33,7 +36,7 @@ void SdlIo::Loop()
 			}
 		}
 		// TODO: required to stop using 100% of CPU, find lowest reasonable value
-		SDL_Delay(10);
+		SDL_Delay(5);
 	}
 }
 
@@ -77,7 +80,7 @@ uint16_t SdlIo::ScaledAxisMovement(int16_t value, AxisType type)
 	float min = (type == AxisType::Trigger ? 0 : SDL_MIN_SINT16);
 
 	float scaled_value = (value - min) / (max - min);
-	uint16_t scaled_return = scaled_value * 0xFFFF; //0xFF
+	uint16_t scaled_return = scaled_value * 0xFFFF;
 
 	return scaled_return;
 }

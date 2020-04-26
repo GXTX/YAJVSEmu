@@ -14,8 +14,7 @@ public:
 	jvs_input_states_t *Inputs;
 
 	SdlIo(jvs_input_states_t *jvs_inputs);
-	// TODO: Properly close the device.
-	//~SdlIo();
+	~SdlIo();
 	void Loop();
 private:
 	enum AxisType {
@@ -30,7 +29,5 @@ private:
 	void AxisMovementHandler(SDL_ControllerAxisEvent *axis);
 	uint16_t ScaledAxisMovement(int16_t value, AxisType type);
 };
-
-extern SdlIo* g_pSdlIo;
 
 #endif

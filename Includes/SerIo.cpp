@@ -1,11 +1,4 @@
-
 #include "SerIo.h"
-
-#include <iostream>
-#include <cstdint>
-#include <cstring>
-
-SerIo* g_pSerIo;
 
 SerIo::SerIo(char *devicePath)
 {
@@ -34,7 +27,7 @@ int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
 	for(uint8_t i = 0; i < bytes_to_write; i++) {
 		std::printf(" %02X", write_buffer[i]);
 	}
-	std::cout << "\n";
+	std::cout << std::endl;
 #endif
 	int ret = write(SerialHandler, write_buffer, bytes_to_write);
 
@@ -95,14 +88,14 @@ int SerIo::Read(uint8_t *buffer)
 		for (int i = 0; i < bytes; i++) {
 			std::printf(" %02X", buffer[i]);
 		}
-		std::cout << "\n";
+		std::cout << std::endl;
 #endif
 	}
 
 	return 0;
 }
 
-int SerIo::SetAttributes(int SerialHandler, int baud)
+void SerIo::SetAttributes(int SerialHandler, int baud)
 {
 	struct termios options;
 	int status;
@@ -134,8 +127,6 @@ int SerIo::SetAttributes(int SerialHandler, int baud)
 
 	// Why are we sleeping?
 	usleep(100 * 1000); // 10mS
-
-	return 0;
 }
 
 int SerIo::SetLowLatency(int SerialHandler)
@@ -143,13 +134,13 @@ int SerIo::SetLowLatency(int SerialHandler)
 	struct serial_struct serial_settings;
 
 	if (ioctl(SerialHandler, TIOCGSERIAL, &serial_settings) < 0) {
-		std::cout << "SerIo::SetLowLatency - Failed to read serial settings for low latency mode.\n";
+		std::cerr << "SerIo::SetLowLatency: Failed to read serial settings for low latency mode." << std::endl;
 		return 0;
 	}
 
 	serial_settings.flags |= ASYNC_LOW_LATENCY;
 	if (ioctl(SerialHandler, TIOCSSERIAL, &serial_settings) < 0) {
-		std::cout << "SerIo::SetLowLatency - Failed to write serial settings for low latency mode.\n";
+		std::cerr << "SerIo::SetLowLatency: Failed to write serial settings for low latency mode." << std::endl;
 		return 0;
 	}
 

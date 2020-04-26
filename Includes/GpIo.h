@@ -1,7 +1,6 @@
 #ifndef GPIO_H
 #define GPIO_H
 
-#include <cstdint>
 #include <iostream>
 #include <bcm2835.h>
 
@@ -34,7 +33,5 @@ public:
 	void Write(PinState state);
 private:
 };
-
-extern GpIo* g_pGpIo;
 
 #endif
