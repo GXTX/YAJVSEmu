@@ -226,7 +226,7 @@ uint8_t JvsIo::GetByte(uint8_t* &buffer)
 {
 	uint8_t value = *buffer++;
 #ifdef DEBUG_JVS_PACKETS
-	printf(" %02X", value);
+	std::printf(" %02X", value);
 #endif
 	return value;
 }
@@ -271,7 +271,8 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 				// Overwrite the verly-optimistic StatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.
 				ResponseBuffer[0] = StatusCode::UnsupportedCommand;
-				printf("JvsIo::HandlePacket: Unhandled Command %02X\n", packet[i]);
+				std::printf("JvsIo::HandlePacket: Unhandled Command %02X", packet[i]);
+				std::cout << std::endl;
 				return;
 		}
 	}
@@ -287,12 +288,12 @@ size_t JvsIo::ReceivePacket(uint8_t* buffer)
 
 	// First, read the sync byte
 #ifdef DEBUG_JVS_PACKETS
-	printf("JvsIo::ReceivePacket:");
+	std::cout << "JvsIo::ReceivePacket:";
 #endif
 	header.sync = GetByte(buffer); // Do not unescape the sync-byte!
 	if (header.sync != SYNC_BYTE) {
 #ifdef DEBUG_JVS_PACKETS
-		printf(" [Missing SYNC_BYTE!]\n");
+		std::cout << " [Missing SYNC_BYTE!]" << std::endl;
 #endif
 		// If it's wrong, return we've processed (actually, skipped) one byte
 		return 1;
@@ -316,14 +317,13 @@ size_t JvsIo::ReceivePacket(uint8_t* buffer)
 	// Read the checksum from the last byte
 	uint8_t packet_checksum = GetEscapedByte(buffer);
 #ifdef DEBUG_JVS_PACKETS
-	printf("\n");
+	std::cout << std::endl;
 #endif
 
 	// Verify checksum - skip packet if invalid
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
 		ResponseBuffer.push_back(StatusCode::ChecksumError);
-		printf("Checksum err\n");
 	} else {
 		// If the packet was intended for us, we need to handle it
 		if (header.target == TARGET_BROADCAST || header.target == DeviceId) {
@@ -391,14 +391,13 @@ size_t JvsIo::SendPacket(uint8_t* buffer)
 
 	// Calculate an return the total packet size including header
 	size_t total_packet_size = buffer - buffer_start;
+
 #ifdef DEBUG_JVS_PACKETS
-
-	printf("JvsIo::SendPacket:");
+	std::cout << "JvsIo::SendPacket:";
 	for (size_t i = 0; i < total_packet_size; i++) {
-		printf(" %02X", buffer_start[i]);
+		std::printf(" %02X", buffer_start[i]);
 	}
-
-	printf("\n");
+	std::cout << std::endl;
 #endif
 
 	return total_packet_size;

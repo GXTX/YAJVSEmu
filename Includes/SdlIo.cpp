@@ -11,7 +11,7 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs)
 		std::cerr << "Joystick Error: " << SDL_GetError() << std::endl;
 	}
 	else {
-		std::cout << "Joystick Connected: " << SDL_GameControllerName(sgc);
+		std::cout << "Joystick Connected: " << SDL_GameControllerName(sgc) << std::endl;
 	}
 }
 
