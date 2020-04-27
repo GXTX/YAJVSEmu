@@ -5,6 +5,7 @@
 #include "Includes/SerIo.h"
 #include "Includes/GpIo.h"
 #include "Includes/SdlIo.h"
+#include "Includes/WiiIo.h"
 
 #include <sched.h>
 
@@ -40,7 +41,8 @@ int main()
 	}
 
 	// Spawn lone SDL2 input thread.
-	std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs)).detach();
+	//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs)).detach();
+	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(&JVSHandler->Inputs)).detach();
 
 	while (true) {
 		ReadBuffer.resize(512);

@@ -26,6 +26,8 @@
 
 #include "JvsIo.h"
 
+//#define DEBUG_JVS_PACKETS
+
 // We will emulate SEGA 837-13551 IO Board
 JvsIo::JvsIo(SenseStates sense)
 {

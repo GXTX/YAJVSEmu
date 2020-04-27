@@ -5,9 +5,10 @@ project(YetAnotherJVSEmu)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(SDL2 sdl2)
+pkg_check_modules(SDL2 REQUIRED sdl2)
+pkg_check_modules(XWII REQUIRED libxwiimote)
 
-include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
+include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${XWII_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
 
 add_executable(${PROJECT_NAME}
 	main.cpp
@@ -15,6 +16,7 @@ add_executable(${PROJECT_NAME}
 	Includes/SerIo.cpp
 	Includes/GpIo.cpp
 	Includes/SdlIo.cpp
+	Includes/WiiIo.cpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -23,4 +25,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} bcm2835)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} ${XWII_LIBRARIES} bcm2835)
