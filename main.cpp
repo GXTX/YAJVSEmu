@@ -5,7 +5,10 @@
 #include "Includes/SerIo.h"
 #include "Includes/GpIo.h"
 #include "Includes/SdlIo.h"
+
+#ifdef WII
 #include "Includes/WiiIo.h"
+#endif
 
 #include <sched.h>
 
@@ -40,9 +43,16 @@ int main()
 		return 1;
 	}
 
-	// Spawn lone SDL2 input thread.
-	//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs)).detach();
+	// Spawn lone SDL2 or WiiIo input thread.
+	// NOTE: There probably is no reason we can't have both of these running
+	// at once but we want to avoid a situation where SDL attempts to attach
+	// the wiimote to it's thread. There are other ways this can be
+	// avoided but this will work for now.
+#ifdef WII
 	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(&JVSHandler->Inputs)).detach();
+#else
+	std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs)).detach();
+#endif
 
 	while (true) {
 		ReadBuffer.resize(512);
@@ -53,8 +63,7 @@ int main()
 			// TODO: Why without this does it fault?
 			WriteBuffer.resize(ReadBuffer.size());
 			ReadBuffer.clear();
-			// TODO: Check if receivepacket successfully processed then pass off
-			// TODO: if a checksum failure has occured, do we need to send a message to mainboard? yes?
+
 			int ret = JVSHandler->SendPacket(WriteBuffer.data());
 
 			if (ret > 0) {

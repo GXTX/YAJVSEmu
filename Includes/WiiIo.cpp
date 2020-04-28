@@ -11,7 +11,7 @@ WiiIo::WiiIo(jvs_input_states_t *jvs_inputs)
 	// Start scan looking for WiiMotes
 	mon = xwii_monitor_new(false, false);
 	if (!mon) {
-		std::cout << "WiiIo::WiiIo: Unable to create xwiimote monitor." << std::endl;
+		std::cout << "WiiIo::WiiIo: Unable to create monitor." << std::endl;
 	}
 
 	while ((ent = xwii_monitor_poll(mon))) {
@@ -20,22 +20,27 @@ WiiIo::WiiIo(jvs_input_states_t *jvs_inputs)
 		break;
 	}
 	xwii_monitor_unref(mon);
+
+	// Attempt to connect the device.
 	ret = xwii_iface_new(&iface, ent);
 	if (ret) {
 		std::cout << "WiiIo::WiiIo: Unable to connect controller." << std::endl;
 	}
 	else {
-		ret = xwii_iface_open(iface, xwii_iface_available(iface) | XWII_IFACE_WRITABLE);
+		ret = xwii_iface_open(iface, XWII_IFACE_CORE | XWII_IFACE_IR);
 		if (ret) {
 			std::printf("WiiIo::WiiIo: Cannot open interface: %d", ret);
 			std::cout << std::endl;
 		}
+		std::printf("WiiIo::WiiIo: Successfully connected %s.", XWII__NAME);
+		std::cout << std::endl;
 	}
 }
 
-//WiiIo::~WiiIo()
-//{
-//}
+WiiIo::~WiiIo()
+{
+	xwii_iface_unref(iface);
+}
 
 void WiiIo::Loop()
 {
@@ -49,10 +54,6 @@ void WiiIo::Loop()
 	fds[1].fd = xwii_iface_get_fd(iface);
 	fds[1].events = POLLIN;
 	fds_num = 2;
-
-	ret = xwii_iface_watch(iface, true);
-	if (ret)
-		std::cout << "WiiIo::Loop: Cannot initialize hotplug watch descriptor." << std::endl;
 
 	while (true) {
 		ret = poll(fds, fds_num, -1);
@@ -93,10 +94,6 @@ void WiiIo::ButtonPressHandler(xwii_event_key* button)
 		case XWII_KEY_MINUS: Inputs->switches.system.test = button->state; break;
 		case XWII_KEY_HOME: Inputs->switches.player[0].service = button->state; break;
 		case XWII_KEY_PLUS: Inputs->switches.player[0].start = button->state; break;
-		/*case XWII_KEY_UP: Inputs->switches.player[0].up = button->state; break;
-		case XWII_KEY_DOWN: Inputs->switches.player[0].down = button->state; break;
-		case XWII_KEY_LEFT: Inputs->switches.player[0].left = button->state; break;
-		case XWII_KEY_RIGHT: Inputs->switches.player[0].right = button->state; break;*/
 		default: break;
 	}
 }
