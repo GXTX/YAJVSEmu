@@ -2,6 +2,7 @@
 #define SDLIO_H
 
 #include <iostream>
+#include <filesystem>
 
 #include <SDL.h>
 #include <SDL_stdinc.h>

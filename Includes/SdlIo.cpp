@@ -5,6 +5,12 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
 	Inputs = jvs_inputs;
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+	// For additional mappings use https://github.com/gabomdq/SDL_GameControllerDB
+	// Or use custom ones you generate yourself using SDL2's test app or
+	// 3rd party applications such as http://www.generalarcade.com/gamepadtool/
+	if (std::filesystem::exists("gamecontrollerdb.txt")) {
+		SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+	}
 	sgc = SDL_GameControllerOpen(device_index);
 	//SDL_Event event;
 	if (sgc == nullptr) {
