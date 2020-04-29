@@ -13,7 +13,7 @@ class SdlIo
 public:
 	jvs_input_states_t *Inputs;
 
-	SdlIo(jvs_input_states_t *jvs_inputs);
+	SdlIo(jvs_input_states_t *jvs_inputs, int device_index);
 	~SdlIo();
 	void Loop();
 private:

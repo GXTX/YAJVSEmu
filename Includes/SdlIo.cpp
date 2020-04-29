@@ -1,17 +1,17 @@
 #include "SdlIo.h"
 
-SdlIo::SdlIo(jvs_input_states_t *jvs_inputs)
+SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
 {
 	Inputs = jvs_inputs;
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-	sgc = SDL_GameControllerOpen(0);
+	sgc = SDL_GameControllerOpen(device_index);
 	//SDL_Event event;
 	if (sgc == nullptr) {
-		std::cerr << "Joystick Error: " << SDL_GetError() << std::endl;
+		std::cerr << "SdlIo::SdlIo: " << SDL_GetError() << std::endl;
 	}
 	else {
-		std::cout << "Joystick Connected: " << SDL_GameControllerName(sgc) << std::endl;
+		std::cout << "SdlIo::SdlIo: Connected " << SDL_GameControllerName(sgc) << std::endl;
 	}
 }
 
