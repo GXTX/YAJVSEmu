@@ -1,11 +1,12 @@
 #include <iostream>
 #include <thread>
 
-#include "Includes/JvsIo.h"
-#include "Includes/SerIo.h"
-#include "Includes/GpIo.h"
-#include "Includes/SdlIo.h"
-#include "Includes/WiiIo.h"
+#include "JvsIo.h"
+#include "SerIo.h"
+#include "GpIo.h"
+#include "SdlIo.h"
+#include "WiiIo.h"
+#include "version.h"
 
 #include <SDL.h>
 #include <xwiimote.h>
@@ -21,6 +22,14 @@ int setup_questions(setup_information *info);
 
 int main()
 {
+	std::cout << PROJECT_NAME << ": ";
+#ifdef NDEBUG
+std::cout << "Release - ";
+#else
+std::cout << "Debug - ";
+#endif
+	std::cout << _GIT_VERSION << " (" << __DATE__ << ")" << std::endl;
+
 	setup_information setup;
 
 	int ret = setup_questions(&setup);

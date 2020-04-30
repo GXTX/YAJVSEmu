@@ -12,12 +12,12 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
 		SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 	}
 	sgc = SDL_GameControllerOpen(device_index);
-	//SDL_Event event;
+
 	if (sgc == nullptr) {
 		std::cerr << "SdlIo::SdlIo: " << SDL_GetError() << std::endl;
 	}
 	else {
-		std::cout << "SdlIo::SdlIo: Connected " << SDL_GameControllerName(sgc) << std::endl;
+		std::cout << "SdlIo::SdlIo: Connected " << SDL_JoystickNameForIndex(device_index) << std::endl;
 	}
 }
 
@@ -37,6 +37,7 @@ void SdlIo::Loop()
 					break;
 				case SDL_CONTROLLERAXISMOTION:
 					AxisMovementHandler(&event.caxis);
+					break;
 				default:
 					break;
 			}
