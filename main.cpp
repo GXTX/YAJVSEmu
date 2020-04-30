@@ -18,7 +18,12 @@ typedef struct {
 	int sdldeviceindex;
 } setup_information;
 
-int setup_questions(setup_information *info);
+enum SetupStatus {
+	Ok,
+	Failed,
+};
+
+SetupStatus setup_questions(setup_information *info);
 
 int main()
 {
@@ -32,8 +37,8 @@ std::cout << "Debug - ";
 
 	setup_information setup;
 
-	int ret = setup_questions(&setup);
-	if (ret == 0) {
+	SetupStatus ret = setup_questions(&setup);
+	if (ret == SetupStatus::Failed) {
 		std::cout << "You entered something unexpected." << std::endl;
 		return 0;
 	}
@@ -104,7 +109,7 @@ std::cout << "Debug - ";
 	return 0;
 }
 
-int setup_questions(setup_information *info)
+SetupStatus setup_questions(setup_information *info)
 {
 	struct xwii_monitor *mon;
 	char *ent;
@@ -124,6 +129,8 @@ int setup_questions(setup_information *info)
 
 	mon = xwii_monitor_new(false, false);
 	if (mon) {
+		// TODO: probably doesn't need to loop? we only care about the first
+		// controller right now
 		while ((ent = xwii_monitor_poll(mon))) {
 			num++;
 			free(ent);
@@ -137,12 +144,12 @@ int setup_questions(setup_information *info)
 				wii_choice.compare("N") != 0 &&
 				wii_choice.compare("y") != 0 &&
 				wii_choice.compare("n") != 0) {
-				return 0;
+				return SetupStatus::Failed;
 			}
 			else if (wii_choice.compare("y") == 0) {
 				std::cout << "==================================================" << std::endl;
 				info->sdlbackend = false;
-				return 1;
+				return SetupStatus::Ok;
 			}
 		}
 		num = 0;
@@ -152,6 +159,7 @@ int setup_questions(setup_information *info)
 
 	std::cout << "Which joystick do you wish to use?" << std::endl
 		<< "--------------------------------------------------" << std::endl;
+
 	for (int i = 0; i < SDL_NumJoysticks(); ++i) {
 		if (SDL_IsGameController(i)) {
 			std::printf("%d: %s", i+1, SDL_JoystickNameForIndex(i));
@@ -163,15 +171,20 @@ int setup_questions(setup_information *info)
 		num++;
 	}
 
+	if (num == 0) {
+		std::cout << "Couldn't find any compatible device to connect." << std::endl;
+		return SetupStatus::Failed;
+	}
+
 	std::cout << "--------------------------------------------------" 
 		<< std::endl << "Choice: ";
 	std::getline(std::cin, sdl_choice);
 	if (!std::strtol(sdl_choice.data(), NULL, 10)) {
-		return 0;
+		return SetupStatus::Failed;
 	}
 	sdl_controller = std::stoi(sdl_choice);
 	if (sdl_controller > num+1) {
-		return 0;
+		return SetupStatus::Failed;
 	}
 
 	info->sdlbackend = true;
@@ -179,5 +192,5 @@ int setup_questions(setup_information *info)
 
 	std::cout << "==================================================" << std::endl;
 
-	return 1;
+	return SetupStatus::Ok;
 }
