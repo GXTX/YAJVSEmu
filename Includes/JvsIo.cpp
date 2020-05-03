@@ -212,6 +212,23 @@ int JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t* data)
 	return 1;
 }
 
+// TODO: Is this command supposed to set per-game subtractions?
+int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
+{
+	ResponseBuffer.push_back(ReportCode::Handled);
+
+	uint16_t decrement = (data[2] << 8) | data[3];
+
+	if (Inputs.coins[data[1]].coins >= decrement) {
+		Inputs.coins[data[1]].coins -= decrement;
+	}
+	else {
+		Inputs.coins[data[1]].coins = 0;
+	}
+
+	return 1;
+}
+
 int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 {
 	uint8_t banks = data[1];
@@ -268,6 +285,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x20: i += Jvs_Command_20_ReadSwitchInputs(command_data); break;
 			case 0x21: i += Jvs_Command_21_ReadCoinInputs(command_data); break;
 			case 0x22: i += Jvs_Command_22_ReadAnalogInputs(command_data); break;
+			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
 			default:
 				// Overwrite the verly-optimistic StatusCode::StatusOkay with Status::Unsupported command

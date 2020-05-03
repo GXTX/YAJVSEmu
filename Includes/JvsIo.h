@@ -204,6 +204,7 @@ private:
 	int Jvs_Command_20_ReadSwitchInputs(uint8_t* data);
 	int Jvs_Command_21_ReadCoinInputs(uint8_t* data);
 	int Jvs_Command_22_ReadAnalogInputs(uint8_t* data);
+	int Jvs_Command_30_CoinSubtractionOutput(uint8_t* data);
 	int Jvs_Command_32_GeneralPurposeOutput(uint8_t* data);
 
 	bool BroadcastPacket;					// Set when the last command was a broadcast
