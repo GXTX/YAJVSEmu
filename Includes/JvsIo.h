@@ -37,6 +37,7 @@ typedef struct {
 #define JVS_MAX_PLAYERS (2)
 #define JVS_MAX_ANALOG (8)
 #define JVS_MAX_COINS (JVS_MAX_PLAYERS)
+#define JVS_MAX_SCREEN_CHANNELS (1)
 
 typedef struct {
 	bool start = false;
@@ -79,10 +80,10 @@ typedef struct {
 
 	uint8_t GetByte0() {
 		uint8_t value = 0;
-		value |= test      ? 1 << 7 : 0;
-		value |= tilt_1     ? 1 << 6 : 0;
-		value |= tilt_2     ? 1 << 5 : 0;
-		value |= tilt_3     ? 1 << 4 : 0;
+		value |= test   ? 1 << 7 : 0;
+		value |= tilt_1 ? 1 << 6 : 0;
+		value |= tilt_2 ? 1 << 5 : 0;
+		value |= tilt_3 ? 1 << 4 : 0;
 		return value;
 	}
 } jvs_switch_system_inputs_t;
@@ -121,9 +122,30 @@ typedef struct {
 } jvs_coin_slots_t;
 
 typedef struct {
+	uint32_t position = 0x00000000;
+
+	uint8_t GetByte0() {
+		return (position >> 24) & 0xFF;
+	}
+
+	uint8_t GetByte1() {
+		return (position >> 16) & 0xFF;
+	}
+
+	uint8_t GetByte2() {
+		return (position >> 8) & 0xFF;
+	}
+
+	uint8_t GetByte3() {
+		return position & 0xFF;
+	}
+} jvs_screen_pos_input_t;
+
+typedef struct {
 	jvs_switch_inputs_t switches;
 	jvs_analog_input_t analog[JVS_MAX_ANALOG];
 	jvs_coin_slots_t coins[JVS_MAX_COINS];
+	jvs_screen_pos_input_t screen[JVS_MAX_SCREEN_CHANNELS];
 } jvs_input_states_t;
 
 class JvsIo
@@ -204,6 +226,7 @@ private:
 	int Jvs_Command_20_ReadSwitchInputs(uint8_t* data);
 	int Jvs_Command_21_ReadCoinInputs(uint8_t* data);
 	int Jvs_Command_22_ReadAnalogInputs(uint8_t* data);
+	int Jvs_Command_25_ReadScreenPosition(uint8_t* data);
 	int Jvs_Command_30_CoinSubtractionOutput(uint8_t* data);
 	int Jvs_Command_32_GeneralPurposeOutput(uint8_t* data);
 

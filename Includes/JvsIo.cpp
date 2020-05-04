@@ -38,7 +38,7 @@ JvsIo::JvsIo(SenseStates sense)
 	JvsVersion = 0x20;
 	CommunicationVersion = 0x10;
 
-	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.0";
+	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.00";
 }
 
 uint8_t JvsIo::GetDeviceId()
@@ -130,6 +130,12 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 	ResponseBuffer.push_back(16); // 16 bits per analog input channel
 	ResponseBuffer.push_back(0);
 
+	// NOTE: SEGA hardware used/uses 12 bits, NAMCO is known to use 16 bits.
+	ResponseBuffer.push_back(CapabilityCode::ScreenPointerInputs);
+	ResponseBuffer.push_back(16); // 16bits for X
+	ResponseBuffer.push_back(16); // Y
+	ResponseBuffer.push_back(JVS_MAX_SCREEN_CHANNELS);
+
 	// Output capabilities
 	ResponseBuffer.push_back(CapabilityCode::GeneralPurposeOutputs);
 	ResponseBuffer.push_back(6); // number of outputs
@@ -212,6 +218,32 @@ int JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t* data)
 	return 1;
 }
 
+// TODO: Verify with a test case...
+int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
+{
+	static jvs_screen_pos_input_t default_screen_pos;
+	uint8_t nr_screen_inputs = data[1];
+
+	ResponseBuffer.push_back(ReportCode::Handled);
+
+	for (int i = 0; i < nr_screen_inputs; i++) {
+		const uint8_t bytesPerScreenInput = 4;
+		for (int j = 0; j < bytesPerScreenInput; j++) {
+			// If a title asks for more screen channels than we support, pad with dummy data
+			jvs_screen_pos_input_t &screen_pos_input = (i >= JVS_MAX_SCREEN_CHANNELS) ? default_screen_pos : Inputs.screen[i];
+			uint8_t value
+				= (j == 0) ? screen_pos_input.GetByte0()
+				: (j == 1) ? screen_pos_input.GetByte1()
+				: (j == 2) ? screen_pos_input.GetByte2()
+				: (j == 3) ? screen_pos_input.GetByte3()
+				: 0;
+			ResponseBuffer.push_back(value);
+		}
+	}
+
+	return 1;
+}
+
 // TODO: Is this command supposed to set per-game subtractions?
 int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 {
@@ -285,6 +317,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x20: i += Jvs_Command_20_ReadSwitchInputs(command_data); break;
 			case 0x21: i += Jvs_Command_21_ReadCoinInputs(command_data); break;
 			case 0x22: i += Jvs_Command_22_ReadAnalogInputs(command_data); break;
+			case 0x25: i += Jvs_Command_25_ReadScreenPosition(command_data); break;
 			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
 			default:

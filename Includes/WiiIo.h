@@ -19,10 +19,15 @@ public:
 	~WiiIo();
 	void Loop();
 private:
+	enum MovementValueType {
+		Analog,
+		ScreenPos,
+	};
+
 	jvs_input_states_t *Inputs;
 	struct xwii_iface *iface;
 	void ButtonPressHandler(xwii_event_key* button);
-	void IRMovementHandler(xwii_event_abs* ir);
+	void IRMovementHandler(xwii_event_abs* ir, MovementValueType type);
 };
 
 #endif

@@ -76,7 +76,7 @@ void WiiIo::Loop()
 		} else {
 			switch (event.type) {
 				case XWII_EVENT_KEY: ButtonPressHandler(&event.v.key); break;
-				case XWII_EVENT_IR: IRMovementHandler(event.v.abs); break;
+				case XWII_EVENT_IR: IRMovementHandler(event.v.abs, MovementValueType::Analog); break;
 				default:
 					break;
 			}
@@ -98,7 +98,7 @@ void WiiIo::ButtonPressHandler(xwii_event_key* button)
 	}
 }
 
-void WiiIo::IRMovementHandler(xwii_event_abs* ir)
+void WiiIo::IRMovementHandler(xwii_event_abs* ir, MovementValueType type)
 {
 	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]))  {
 		int middlex = (ir[0].x + ir[1].x) / 2;
@@ -110,7 +110,13 @@ void WiiIo::IRMovementHandler(xwii_event_abs* ir)
 		uint16_t finalx = (valuex / 1023.0) * 0xFFFF;
 		uint16_t finaly = std::fabs((valuey / 1023.0) * 0xFFFF);
 
-		Inputs->analog[0].value = finalx;
-		Inputs->analog[1].value = finaly;
+		if (type == MovementValueType::ScreenPos) {
+			Inputs->screen[0].position = (finalx << 16);
+			Inputs->screen[0].position |= finaly;
+		}
+		else {
+			Inputs->analog[0].value = finalx;
+			Inputs->analog[1].value = finaly;
+		}
 	}
 }
