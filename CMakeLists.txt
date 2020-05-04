@@ -9,8 +9,8 @@ find_package(Git)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(XWII REQUIRED libxwiimote)
 
-if(Git_FOUND)
-	execute_process(COMMAND git describe --always --tags --first-parent
+if(GIT_FOUND)
+	execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --tags --first-parent
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 		OUTPUT_VARIABLE _GIT_VERSION
 		OUTPUT_STRIP_TRAILING_WHITESPACE
