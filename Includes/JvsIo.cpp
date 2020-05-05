@@ -138,7 +138,7 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 
 	// Output capabilities
 	ResponseBuffer.push_back(CapabilityCode::GeneralPurposeOutputs);
-	ResponseBuffer.push_back(6); // number of outputs
+	ResponseBuffer.push_back(JVS_MAX_GPO); // number of outputs
 	ResponseBuffer.push_back(0);
 	ResponseBuffer.push_back(0);
 
@@ -267,9 +267,17 @@ int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 
 	ResponseBuffer.push_back(ReportCode::Handled);
 
-	// TODO: Handle output
+#ifdef DEBUG_GENERAL_OUT
+	std::cout << "JvsIo::Jvs_Command_32_GeneralPurposeOutput:";
+	for (int i = 0; i < banks; i++) {
+		if (i <= JVS_MAX_GPO) {
+			std::string gpo_pin = std::bitset<8>(data[i+2]).to_string();
+			std::printf(" %s", gpo_pin.c_str());
+		}
+	}
+	std::cout << std::endl;
+#endif
 
-	// Input data size is 1 byte indicating the number of banks, followed by one byte per bank
 	return 1 + banks;
 }
 

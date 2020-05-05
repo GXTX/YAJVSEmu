@@ -38,6 +38,7 @@ typedef struct {
 #define JVS_MAX_ANALOG (8)
 #define JVS_MAX_COINS (JVS_MAX_PLAYERS)
 #define JVS_MAX_SCREEN_CHANNELS (1)
+#define JVS_MAX_GPO (6)
 
 typedef struct {
 	bool start = false;
