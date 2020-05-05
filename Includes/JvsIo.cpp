@@ -154,8 +154,11 @@ int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
 
 	std::string main_board_id;
 
-	// Ignore the first byte as it's the command byte
-	for (int i = 1; i < (uint8_t)sizeof(data); i++) {
+	// Ignore the command and addr bytes, break on null terminator
+	for (int i = 2; i < (uint8_t)sizeof(data); i++) {
+		if (data[i] == 0x00) {
+			break;
+		}
 		main_board_id.push_back(data[i]);
 	}
 
@@ -165,7 +168,7 @@ int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
 		std::endl;
 #endif
 
-	return 1;
+	return 2 + main_board_id.size();
 }
 
 int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
@@ -269,16 +272,17 @@ int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 {
 	ResponseBuffer.push_back(ReportCode::Handled);
 
+	uint8_t slot = data[1] - 1;
 	uint16_t decrement = (data[2] << 8) | data[3];
 
-	if (Inputs.coins[data[1]].coins >= decrement) {
-		Inputs.coins[data[1]].coins -= decrement;
+	if (Inputs.coins[slot].coins >= decrement) {
+		Inputs.coins[slot].coins -= decrement;
 	}
 	else {
-		Inputs.coins[data[1]].coins = 0;
+		Inputs.coins[slot].coins = 0;
 	}
 
-	return 1;
+	return 3;
 }
 
 int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
@@ -305,18 +309,18 @@ int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
 {
 	ResponseBuffer.push_back(ReportCode::Handled);
 
+	uint8_t slot = data[1] - 1;
 	uint16_t increment = (data[2] << 8) | data[3];
-
 	uint32_t total = Inputs.coins[data[1]].coins + increment;
 
 	if (total <= UINT16_MAX) {
-		Inputs.coins[data[1]].coins += increment;
+		Inputs.coins[slot].coins += increment;
 	}
 	else {
-		Inputs.coins[data[1]].coins = UINT16_MAX;
+		Inputs.coins[slot].coins = 0xFFFF;
 	}
 
-	return 1;
+	return 3;
 }
 
 uint8_t JvsIo::GetByte(uint8_t* &buffer)
