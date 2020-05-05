@@ -244,7 +244,6 @@ int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
 	return 1;
 }
 
-// TODO: Is this command supposed to set per-game subtractions?
 int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 {
 	ResponseBuffer.push_back(ReportCode::Handled);
@@ -279,6 +278,24 @@ int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 #endif
 
 	return 1 + banks;
+}
+
+int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
+{
+	ResponseBuffer.push_back(ReportCode::Handled);
+
+	uint16_t increment = (data[2] << 8) | data[3];
+
+	uint32_t total = Inputs.coins[data[1]].coins + increment;
+
+	if (total <= UINT16_MAX) {
+		Inputs.coins[data[1]].coins += increment;
+	}
+	else {
+		Inputs.coins[data[1]].coins = UINT16_MAX;
+	}
+
+	return 1;
 }
 
 uint8_t JvsIo::GetByte(uint8_t* &buffer)
@@ -328,6 +345,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x25: i += Jvs_Command_25_ReadScreenPosition(command_data); break;
 			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
+			case 0x35: i += Jvs_Command_35_CoinAdditionOutput(command_data); break;
 			default:
 				// Overwrite the verly-optimistic StatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.

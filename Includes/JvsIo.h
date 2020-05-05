@@ -230,6 +230,7 @@ private:
 	int Jvs_Command_25_ReadScreenPosition(uint8_t* data);
 	int Jvs_Command_30_CoinSubtractionOutput(uint8_t* data);
 	int Jvs_Command_32_GeneralPurposeOutput(uint8_t* data);
+	int Jvs_Command_35_CoinAdditionOutput(uint8_t* data);
 
 	bool BroadcastPacket;					// Set when the last command was a broadcast
 	//uint8_t* pSense = nullptr;				// Pointer to Sense line
