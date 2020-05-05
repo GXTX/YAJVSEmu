@@ -224,6 +224,7 @@ private:
 	int Jvs_Command_12_GetJvsRevision();
 	int Jvs_Command_13_GetCommunicationVersion();
 	int Jvs_Command_14_GetCapabilities();
+	int Jvs_Command_15_ConveyId(uint8_t* data);
 	int Jvs_Command_20_ReadSwitchInputs(uint8_t* data);
 	int Jvs_Command_21_ReadCoinInputs(uint8_t* data);
 	int Jvs_Command_22_ReadAnalogInputs(uint8_t* data);

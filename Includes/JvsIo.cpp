@@ -147,6 +147,27 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 	return 0;
 }
 
+// TODO: Verify with a test case...
+int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
+{
+	ResponseBuffer.push_back(ReportCode::Handled);
+
+	std::string main_board_id;
+
+	// Ignore the first byte as it's the command byte
+	for (int i = 1; i < (uint8_t)sizeof(data); i++) {
+		main_board_id.push_back(data[i]);
+	}
+
+#ifdef DEBUG_CONVEY_ID
+	std::cout << "JvsIo::Jvs_Command_15_ConveyId: " <<
+		std::printf("%s", main_board_id.c_str()) <<
+		std::endl;
+#endif
+
+	return 1;
+}
+
 int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
 {
 	static jvs_switch_player_inputs_t default_switch_player_input;
@@ -339,6 +360,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x12: i += Jvs_Command_12_GetJvsRevision(); break;
 			case 0x13: i += Jvs_Command_13_GetCommunicationVersion(); break;
 			case 0x14: i += Jvs_Command_14_GetCapabilities(); break;
+			case 0x15: i += Jvs_Command_15_ConveyId(command_data); break;
 			case 0x20: i += Jvs_Command_20_ReadSwitchInputs(command_data); break;
 			case 0x21: i += Jvs_Command_21_ReadCoinInputs(command_data); break;
 			case 0x22: i += Jvs_Command_22_ReadAnalogInputs(command_data); break;
