@@ -26,7 +26,7 @@ Running
 
 Prior to use you must have a USB to RS485 adapter installed on your Pi, and JVS cable wired up like this.
 
-[![wiring diagram](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/9bbe63fa55de94d98976a89eb79d312619487549/wiring_diagram.png "wiring diagram")](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/9bbe63fa55de94d98976a89eb79d312619487549/wiring_diagram.png "wiring diagram")
+[![wiring diagram](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/a1c453d78f1f51953c67901f4135050ef18d9d31/wiring_diagram.png "wiring diagram")](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/a1c453d78f1f51953c67901f4135050ef18d9d31/wiring_diagram.png "wiring diagram")
 
 The program *must* be ran as root. There is also **zero** prior configuration required, just run and the program will ask you information about your environment.
 ```
