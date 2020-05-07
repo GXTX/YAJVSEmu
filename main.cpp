@@ -104,6 +104,10 @@ std::cout << "Debug - ";
 				WriteBuffer.clear();
 			}
 		}
+
+		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
+		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
+		usleep(100);
 	}
 
 	return 0;
