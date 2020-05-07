@@ -12,10 +12,17 @@
 
 #include "JvsIo.h"
 
+// TODO: vector?
+typedef struct {
+	std::string controller[2];
+	struct xwii_iface *interface[2];
+	int fd[2];
+} wiimotes;
+
 class WiiIo
 {
 public:
-	WiiIo(jvs_input_states_t *jvs_inputs);
+	WiiIo(int players, jvs_input_states_t *jvs_inputs);
 	~WiiIo();
 	void Loop();
 private:
@@ -25,9 +32,12 @@ private:
 	};
 
 	jvs_input_states_t *Inputs;
-	struct xwii_iface *iface;
-	void ButtonPressHandler(xwii_event_key* button);
-	void IRMovementHandler(xwii_event_abs* ir, MovementValueType type);
+	wiimotes controllers;
+	int numberOfPlayers;
+	struct xwii_event event;
+
+	void ButtonPressHandler(int player, xwii_event_key* button);
+	void IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type);
 };
 
 #endif

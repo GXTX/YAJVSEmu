@@ -13,6 +13,7 @@
 #include <sched.h>
 
 typedef struct {
+	int players = 1;
 	char *serialport;
 	bool sdlbackend;
 	int sdldeviceindex;
@@ -21,8 +22,11 @@ typedef struct {
 enum SetupStatus {
 	Ok,
 	Failed,
+	Yes,
+	No,
 };
 
+SetupStatus answer_verify(std::string *answer);
 SetupStatus setup_questions(setup_information *info);
 
 int main()
@@ -74,7 +78,7 @@ std::cout << "Debug - ";
 		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, setup.sdldeviceindex)).detach();
 	}
 	else {
-		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(&JVSHandler->Inputs)).detach();
+		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
 	}
 
 	while (true) {
@@ -113,6 +117,24 @@ std::cout << "Debug - ";
 	return 0;
 }
 
+SetupStatus answer_verify(std::string *answer)
+{
+	if (answer->compare("Y") != 0 && 
+		answer->compare("N") != 0 &&
+		answer->compare("y") != 0 &&
+		answer->compare("n") != 0) {
+		return SetupStatus::Failed;
+	}
+	else if (answer->compare("y") == 0 || answer->compare("Y") == 0) {
+		return SetupStatus::Yes;
+	}
+	else if (answer->compare("n") == 0 || answer->compare("N") == 0) {
+		return SetupStatus::No;
+	}
+	return SetupStatus::Failed;
+}
+
+
 SetupStatus setup_questions(setup_information *info)
 {
 	struct xwii_monitor *mon;
@@ -121,6 +143,7 @@ SetupStatus setup_questions(setup_information *info)
 	std::string com_choice;
 	std::string wii_choice;
 	std::string sdl_choice;
+	SetupStatus verify;
 	int sdl_controller;
 
 	std::cout << "==================================================" << std::endl;
@@ -133,26 +156,44 @@ SetupStatus setup_questions(setup_information *info)
 
 	mon = xwii_monitor_new(false, false);
 	if (mon) {
-		// TODO: probably doesn't need to loop? we only care about the first
-		// controller right now
 		while ((ent = xwii_monitor_poll(mon))) {
 			num++;
 			free(ent);
-			break;
 		}
 		xwii_monitor_unref(mon);
 		if (num > 0) {
 			std::cout << "Do you want to use your WiiMote? (Y/N): ";
 			std::getline(std::cin, wii_choice);
-			if (wii_choice.compare("Y") != 0 && 
-				wii_choice.compare("N") != 0 &&
-				wii_choice.compare("y") != 0 &&
-				wii_choice.compare("n") != 0) {
+			verify = answer_verify(&wii_choice);
+			if (verify == SetupStatus::Failed) {
 				return SetupStatus::Failed;
 			}
-			else if (wii_choice.compare("y") == 0) {
-				std::cout << "==================================================" << std::endl;
+			else if (verify == SetupStatus::Yes) {
 				info->sdlbackend = false;
+				if (num > 1) {
+					std::cout << "Would you like to attach more than one WiiMote? (Y/N): ";
+					std::getline(std::cin, wii_choice);
+					verify = answer_verify(&wii_choice);
+					if (verify == SetupStatus::Failed) {
+						return SetupStatus::Failed;
+					}
+					else if (verify == SetupStatus::Yes) {
+						int numberOfPlayers;
+						std::cout << "How many? ";
+						std::printf("(1 - %d): ", num > JVS_MAX_PLAYERS ? JVS_MAX_PLAYERS : num);
+						std::getline(std::cin, wii_choice);
+						if (!std::strtol(wii_choice.data(), NULL, 10)) {
+							return SetupStatus::Failed;
+						}
+						numberOfPlayers = std::stoi(wii_choice);
+						if (numberOfPlayers > num || numberOfPlayers == 0 || numberOfPlayers > JVS_MAX_PLAYERS) {
+							return SetupStatus::Failed;
+						}
+						info->players = numberOfPlayers;
+						return SetupStatus::Ok;
+					}
+				}
+				std::cout << "==================================================" << std::endl;
 				return SetupStatus::Ok;
 			}
 		}

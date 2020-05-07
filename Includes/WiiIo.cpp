@@ -1,12 +1,14 @@
 #include "WiiIo.h"
 
-WiiIo::WiiIo(jvs_input_states_t *jvs_inputs)
+WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 {
 	Inputs = jvs_inputs;
 	struct xwii_monitor *mon;
-	char *ent;
-	int num = 0;
+	int numberOfControllers = 0;
 	int ret;
+	int i = 0;
+
+	numberOfPlayers = players;
 
 	// Start scan looking for WiiMotes
 	mon = xwii_monitor_new(false, false);
@@ -14,49 +16,55 @@ WiiIo::WiiIo(jvs_input_states_t *jvs_inputs)
 		std::cout << "WiiIo::WiiIo: Unable to create monitor." << std::endl;
 	}
 
-	while ((ent = xwii_monitor_poll(mon))) {
-		std::printf("WiiIo::WiiIo: Found device #%d: %s", ++num, ent);
+	while (true) {
+		if(i == numberOfPlayers) {
+			break;
+		}
+		controllers.controller[i] = xwii_monitor_poll(mon);
+		std::printf("WiiIo::WiiIo: Found device #%d: %s", ++numberOfControllers, controllers.controller[i].c_str());
 		std::cout << std::endl;
-		break;
+		i++;
 	}
+
 	xwii_monitor_unref(mon);
 
-	// Attempt to connect the device.
-	ret = xwii_iface_new(&iface, ent);
-	if (ret) {
-		std::cout << "WiiIo::WiiIo: Unable to connect controller." << std::endl;
-	}
-	else {
-		ret = xwii_iface_open(iface, XWII_IFACE_CORE | XWII_IFACE_IR);
+	for (i = 0; i < numberOfControllers; i++) {
+		ret = xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
 		if (ret) {
-			std::printf("WiiIo::WiiIo: Cannot open interface: %d", ret);
+			std::cout << "WiiIo::WiiIo: Unable to connect controller: " <<
+				std::printf("%d", ret) << std::endl;
+		}
+		else {
+			ret = xwii_iface_open(controllers.interface[i], XWII_IFACE_CORE | XWII_IFACE_IR);
+			if (ret) {
+				std::printf("WiiIo::WiiIo: Cannot open interface: %d", ret);
+				std::cout << std::endl;
+			}
+			std::printf("WiiIo::WiiIo: Successfully connected %s.", XWII__NAME);
+			controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
 			std::cout << std::endl;
 		}
-		std::printf("WiiIo::WiiIo: Successfully connected %s.", XWII__NAME);
-		std::cout << std::endl;
 	}
 }
 
 WiiIo::~WiiIo()
 {
-	xwii_iface_unref(iface);
+	for (int i = 0; i < numberOfPlayers; i++) {
+		xwii_iface_unref(controllers.interface[i]);
+	}
 }
 
 void WiiIo::Loop()
 {
-	struct xwii_event event;
-	int ret = 0, fds_num;
-	struct pollfd fds[2];
+	int ret = 0;
+	std::vector<struct pollfd> fd;
 
-	memset(fds, 0, sizeof(fds));
-	fds[0].fd = 0;
-	fds[0].events = POLLIN;
-	fds[1].fd = xwii_iface_get_fd(iface);
-	fds[1].events = POLLIN;
-	fds_num = 2;
+	for (int i = 0; i < numberOfPlayers; i++) {
+		fd.push_back({controllers.fd[i], POLLIN, 0});
+	}
 
 	while (true) {
-		ret = poll(fds, fds_num, -1);
+		ret = poll(fd.data(), fd.size(), -1);
 		if (ret < 0) {
 			if (errno != EINTR) {
 				ret = -errno;
@@ -66,39 +74,44 @@ void WiiIo::Loop()
 			}
 		}
 
-		ret = xwii_iface_dispatch(iface, &event, sizeof(event));
-		if (ret) {
-			if (ret != -EAGAIN) {
-				std::printf("WiiIo::Loop: Read failed with error : %d", ret);
-				std::cout << std::endl;
-				break;
-			}
-		} else {
-			switch (event.type) {
-				case XWII_EVENT_KEY: ButtonPressHandler(&event.v.key); break;
-				case XWII_EVENT_IR: IRMovementHandler(event.v.abs, MovementValueType::Analog); break;
-				default:
+		for (size_t i = 0; i < fd.size(); i++) {
+			ret = xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event));
+			if (ret) {
+				if (ret != -EAGAIN) {
+					std::printf("WiiIo::Loop: Read failed with error : %d", ret);
+					std::cout << std::endl;
 					break;
+				}
+			} else {
+				switch (event.type) {
+					case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key); break;
+					case XWII_EVENT_IR: IRMovementHandler(i, event.v.abs, MovementValueType::Analog); break;
+					default: break;
+				}
 			}
 		}
 	}
 }
 
-void WiiIo::ButtonPressHandler(xwii_event_key* button)
+void WiiIo::ButtonPressHandler(int player, xwii_event_key* button)
 {
 	switch (button->code) {
-		case XWII_KEY_A: Inputs->switches.player[0].button[1] = button->state; break;
-		case XWII_KEY_B: Inputs->switches.player[0].button[0] = button->state; break;
-		case XWII_KEY_ONE: Inputs->switches.player[0].button[2] = button->state; break;
-		case XWII_KEY_TWO: Inputs->switches.player[0].button[3] = button->state; break;
+		case XWII_KEY_A: Inputs->switches.player[player].button[1] = button->state; break;
+		case XWII_KEY_B: Inputs->switches.player[player].button[0] = button->state; break;
+		case XWII_KEY_ONE: Inputs->switches.player[player].button[2] = button->state; break;
+		case XWII_KEY_TWO: Inputs->switches.player[player].button[3] = button->state; break;
 		case XWII_KEY_MINUS: Inputs->switches.system.test = button->state; break;
-		case XWII_KEY_HOME: Inputs->switches.player[0].service = button->state; break;
-		case XWII_KEY_PLUS: Inputs->switches.player[0].start = button->state; break;
+		case XWII_KEY_HOME: Inputs->switches.player[player].service = button->state; break;
+		case XWII_KEY_PLUS: Inputs->switches.player[player].start = button->state; break;
+		/*case XWII_KEY_UP: Inputs->switches.player[player].up = button->state; break;
+		case XWII_KEY_DOWN: Inputs->switches.player[player].down = button->state; break;
+		case XWII_KEY_LEFT: Inputs->switches.player[player].left = button->state; break;
+		case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;*/
 		default: break;
 	}
 }
 
-void WiiIo::IRMovementHandler(xwii_event_abs* ir, MovementValueType type)
+void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type)
 {
 	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]))  {
 		int middlex = (ir[0].x + ir[1].x) / 2;
@@ -115,8 +128,13 @@ void WiiIo::IRMovementHandler(xwii_event_abs* ir, MovementValueType type)
 			Inputs->screen[0].position |= finaly;
 		}
 		else {
-			Inputs->analog[0].value = finalx;
-			Inputs->analog[1].value = finaly;
+			switch (player) {
+				case 0: Inputs->analog[0].value = finalx; Inputs->analog[1].value = finaly; break;
+				case 1: Inputs->analog[2].value = finalx; Inputs->analog[3].value = finaly; break;
+				case 2: Inputs->analog[4].value = finalx; Inputs->analog[5].value = finaly; break;
+				case 3: Inputs->analog[6].value = finalx; Inputs->analog[7].value = finaly; break;
+				default: break;
+			}
 		}
 	}
 }
