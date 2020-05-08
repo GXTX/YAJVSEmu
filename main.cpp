@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <atomic>
 
 #include "JvsIo.h"
 #include "SerIo.h"
@@ -11,6 +12,7 @@
 #include <SDL.h>
 #include <xwiimote.h>
 #include <sched.h>
+#include <signal.h>
 
 typedef struct {
 	int players = 1;
@@ -25,6 +27,18 @@ enum SetupStatus {
 	Yes,
 	No,
 };
+
+std::atomic<bool> running = true;
+
+void sig_handle(int sig) {
+	switch (sig) {
+		case SIGINT:
+		case SIGTERM:
+			running = false;
+			break;
+		default: break;
+	}
+}
 
 SetupStatus answer_verify(std::string *answer);
 SetupStatus setup_questions(setup_information *info);
@@ -81,7 +95,13 @@ std::cout << "Debug - ";
 		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
 	}
 
-	while (true) {
+	struct sigaction action;
+	action.sa_handler = &sig_handle;
+	action.sa_flags = 0;
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
+
+	while (running) {
 		ReadBuffer.resize(512);
 		SerialHandler->Read(ReadBuffer.data());
 
@@ -114,6 +134,7 @@ std::cout << "Debug - ";
 		usleep(100);
 	}
 
+	std::cout << std::endl;
 	return 0;
 }
 
