@@ -20,26 +20,26 @@ SerIo::~SerIo()
 	close(SerialHandler);
 }
 
-int SerIo::Write(uint8_t *write_buffer, uint8_t bytes_to_write)
+int SerIo::Write(std::vector<uint8_t> &buffer)
 {
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
-	for(uint8_t i = 0; i < bytes_to_write; i++) {
-		std::printf(" %02X", write_buffer[i]);
+	for(uint8_t i = 0; i < buffer.size(); i++) {
+		std::printf(" %02X", buffer.at(i));
 	}
 	std::cout << std::endl;
 #endif
-	int ret = write(SerialHandler, write_buffer, bytes_to_write);
+	int ret = write(SerialHandler, buffer.data(), buffer.size());
 
-	if (ret != bytes_to_write) {
-		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, bytes_to_write);
+	if (ret != buffer.size()) {
+		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, buffer.size());
 		return 0;
 	}
 
 	return 1;
 }
 
-int SerIo::Read(uint8_t *buffer)
+int SerIo::Read(std::vector<uint8_t> &buffer)
 {
 	fd_set fd_serial;
 	struct timeval tv;
@@ -74,25 +74,27 @@ int SerIo::Read(uint8_t *buffer)
 	ioctl(serial, FIONREAD, &bytes);
 
 	if (!bytes) {
-		return 0;
+		return StatusCode::SerialReadError;
 	}
 
-	n = read(serial, buffer, bytes);
+	buffer.resize(bytes);
+
+	n = read(serial, buffer.data(), bytes);
 
 	if (n < 0 || n == 0) {
-		// TODO: would n ever be less than 0?
+		return StatusCode::SerialReadError;
 	}
 	else {
 #ifdef DEBUG_SERIAL
 		std::cout << "SerIo::Read:";
 		for (int i = 0; i < bytes; i++) {
-			std::printf(" %02X", buffer[i]);
+			std::printf(" %02X", buffer.at(i));
 		}
 		std::cout << std::endl;
 #endif
 	}
 
-	return 0;
+	return StatusCode::StatusOkay;
 }
 
 void SerIo::SetAttributes(int SerialHandler, int baud)

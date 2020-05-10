@@ -323,16 +323,18 @@ int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
 	return 3;
 }
 
-uint8_t JvsIo::GetByte(uint8_t* &buffer)
+uint8_t JvsIo::GetByte(std::vector<uint8_t> &buffer)
 {
-	uint8_t value = *buffer++;
+	uint8_t value = buffer.at(0);
+	buffer.erase(buffer.begin());
+
 #ifdef DEBUG_JVS_PACKETS
 	std::printf(" %02X", value);
 #endif
 	return value;
 }
 
-uint8_t JvsIo::GetEscapedByte(uint8_t* &buffer)
+uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
 {
 	uint8_t value = GetByte(buffer);
 
@@ -383,11 +385,8 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 	}
 }
 
-size_t JvsIo::ReceivePacket(uint8_t* buffer)
+size_t JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 {
-	// Remember where the buffer started (so we can calculate the number of bytes we've handled)
-	uint8_t* buffer_start = buffer;
-
 	// Scan the packet header
 	jvs_packet_header_t header;
 
@@ -412,6 +411,7 @@ size_t JvsIo::ReceivePacket(uint8_t* buffer)
 	uint8_t actual_checksum = header.target + header.count;
 
 	// Decode the payload data
+	// TODO: don't put in another vector just to send off
 	std::vector<uint8_t> packet;
 	for (int i = 0; i < header.count - 1; i++) { // Note : -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
@@ -436,18 +436,15 @@ size_t JvsIo::ReceivePacket(uint8_t* buffer)
 		}
 	}
 
-	// Calculate and return the total packet size including header
-	size_t total_packet_size = buffer - buffer_start;
-
-	return total_packet_size;
+	return packet.size() + 1;
 }
 
-void JvsIo::SendByte(uint8_t* &buffer, uint8_t value)
+void JvsIo::SendByte(std::vector<uint8_t> &buffer, uint8_t value)
 {
-	*buffer++ = value;
+	buffer.push_back(value);
 }
 
-void JvsIo::SendEscapedByte(uint8_t* &buffer, uint8_t value)
+void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 {
 	// Special case: Send an exception byte followed by value - 1
 	if (value == SYNC_BYTE || value == ESCAPE_BYTE) {
@@ -458,7 +455,7 @@ void JvsIo::SendEscapedByte(uint8_t* &buffer, uint8_t value)
 	SendByte(buffer, value);
 }
 
-size_t JvsIo::SendPacket(uint8_t* buffer)
+size_t JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 {
 	if (ResponseBuffer.empty()) {
 		return 0;
@@ -470,9 +467,6 @@ size_t JvsIo::SendPacket(uint8_t* buffer)
 	header.target = TARGET_MASTER_DEVICE;
 	header.count = (uint8_t)ResponseBuffer.size() + 1; // Set data size to payload + 1 checksum byte
 	// TODO : What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets??
-
-	// Remember where the buffer started (so we can calculate the number of bytes we've send)
-	uint8_t* buffer_start = buffer;
 
 	// Send the header bytes
 	SendByte(buffer, header.sync); // Do not escape the sync byte!
@@ -494,16 +488,13 @@ size_t JvsIo::SendPacket(uint8_t* buffer)
 
 	ResponseBuffer.clear();
 
-	// Calculate an return the total packet size including header
-	size_t total_packet_size = buffer - buffer_start;
-
 #ifdef DEBUG_JVS_PACKETS
 	std::cout << "JvsIo::SendPacket:";
-	for (size_t i = 0; i < total_packet_size; i++) {
-		std::printf(" %02X", buffer_start[i]);
+	for (size_t i = 0; i < buffer.size(); i++) {
+		std::printf(" %02X", buffer.at(i));
 	}
 	std::cout << std::endl;
 #endif
 
-	return total_packet_size;
+	return buffer.size();
 }

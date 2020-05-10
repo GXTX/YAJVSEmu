@@ -163,8 +163,8 @@ public:
 	jvs_input_states_t Inputs;
 
 	JvsIo(SenseStates sense);
-	size_t SendPacket(uint8_t* buffer);
-	size_t ReceivePacket(uint8_t *buffer);
+	size_t SendPacket(std::vector<uint8_t> &buffer);
+	size_t ReceivePacket(std::vector<uint8_t> &buffer);
 	uint8_t GetDeviceId();
 	void Update();
 
@@ -175,12 +175,12 @@ private:
 	const uint8_t TARGET_MASTER_DEVICE = 0x00;
 	const uint8_t TARGET_BROADCAST = 0xFF;	
 
-	uint8_t GetByte(uint8_t* &buffer);
-	uint8_t GetEscapedByte(uint8_t* &buffer);
+	uint8_t GetByte(std::vector<uint8_t> &buffer);
+	uint8_t GetEscapedByte(std::vector<uint8_t> &buffer);
 	void HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& packet);
 
-	void SendByte(uint8_t* &buffer, uint8_t value);
-	void SendEscapedByte(uint8_t* &buffer, uint8_t value);
+	void SendByte(std::vector<uint8_t> &buffer, uint8_t value);
+	void SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value);
 
 	enum StatusCode {
 		StatusOkay = 1,

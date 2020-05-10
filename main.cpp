@@ -68,8 +68,8 @@ std::cout << "Debug - ";
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
 
 	// TODO: maybe put set these as shared in serio?
-	std::vector<uint8_t> ReadBuffer;
-	std::vector<uint8_t> WriteBuffer;
+	std::vector<uint8_t> SerialBuffer;
+	SerialBuffer.reserve(255 * 2); //max JVS packet * 2
 
 	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
 	if (!GPIOHandler->IsInitialized) {
@@ -101,37 +101,40 @@ std::cout << "Debug - ";
 	sigaction(SIGINT, &action, NULL);
 	sigaction(SIGTERM, &action, NULL);
 
+	int jvs_ret;
+
 	while (running) {
-		ReadBuffer.resize(512);
-		SerialHandler->Read(ReadBuffer.data());
+		jvs_ret = SerialHandler->Read(SerialBuffer);
 
-		if (ReadBuffer.size() > 0) {
-			int temp = JVSHandler->ReceivePacket(ReadBuffer.data());
-			// TODO: Why without this does it fault?
-			WriteBuffer.resize(ReadBuffer.size());
-			ReadBuffer.clear();
+		if (jvs_ret == SerIo::StatusCode::StatusOkay) {
+			jvs_ret = JVSHandler->ReceivePacket(SerialBuffer);
 
-			int ret = JVSHandler->SendPacket(WriteBuffer.data());
+			if (jvs_ret > 1) {
+				SerialBuffer.clear();
+				jvs_ret = JVSHandler->SendPacket(SerialBuffer);
 
-			if (ret > 0) {
-				if(JVSHandler->pSenseChange){
-					if(JVSHandler->pSense == JvsIo::SenseStates::NotConnected) {
-						GPIOHandler->SetMode(GpIo::PinMode::In);
+				if (jvs_ret > 0) {
+					if(JVSHandler->pSenseChange){
+						if(JVSHandler->pSense == JvsIo::SenseStates::NotConnected) {
+							GPIOHandler->SetMode(GpIo::PinMode::In);
+						}
+						else {
+							GPIOHandler->SetMode(GpIo::PinMode::Out);
+							GPIOHandler->Write(GpIo::PinState::Low);
+						}
+						JVSHandler->pSenseChange = false;
 					}
-					else {
-						GPIOHandler->SetMode(GpIo::PinMode::Out);
-						GPIOHandler->Write(GpIo::PinState::Low);
-					}
-					JVSHandler->pSenseChange = false;
+
+					SerialHandler->Write(SerialBuffer);
 				}
-				SerialHandler->Write(WriteBuffer.data(), ret);
-				WriteBuffer.clear();
 			}
 		}
 
+		SerialBuffer.clear();
+
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
 		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
-		usleep(100);
+		usleep(200);
 	}
 
 	std::cout << std::endl;

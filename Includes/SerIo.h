@@ -2,6 +2,7 @@
 #define SERIO_H
 
 #include <iostream>
+#include <vector>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -23,8 +24,8 @@ public:
 	SerIo(char *devicePath);
 	~SerIo();
 
-	int Read(uint8_t *buffer);
-	int Write(uint8_t *write_buffer, uint8_t bytes_to_write);
+	int Read(std::vector<uint8_t> &buffer);
+	int Write(std::vector<uint8_t> &buffer);
 private:
 	int SerialHandler;
 
