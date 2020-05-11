@@ -4,19 +4,16 @@
 #include <iostream>
 #include <vector>
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <linux/serial.h>
+#include <libserialport.h>
 
 class SerIo
 {
 public:
 	enum StatusCode {
-		StatusOkay,
-		SerialTimeout,
-		SerialReadError,
+		Okay,
+		Timeout,
+		ReadError,
+		WriteError,
 	};
 
 	bool IsInitialized;
@@ -29,8 +26,8 @@ public:
 private:
 	int SerialHandler;
 
-	void SetAttributes(int SerialHandler, int baud);
-	int SetLowLatency(int SerialHandler);
+	struct sp_port *Port;
+	struct sp_port_config *PortConfig;
 };
 
 #endif

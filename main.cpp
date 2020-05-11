@@ -106,7 +106,7 @@ std::cout << "Debug - ";
 	while (running) {
 		jvs_ret = SerialHandler->Read(SerialBuffer);
 
-		if (jvs_ret == SerIo::StatusCode::StatusOkay) {
+		if (jvs_ret == SerIo::StatusCode::Okay) {
 			jvs_ret = JVSHandler->ReceivePacket(SerialBuffer);
 
 			if (jvs_ret > 1) {
@@ -134,7 +134,7 @@ std::cout << "Debug - ";
 
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
 		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
-		usleep(200);
+		usleep(500);
 	}
 
 	std::cout << std::endl;
@@ -157,7 +157,6 @@ SetupStatus answer_verify(std::string *answer)
 	}
 	return SetupStatus::Failed;
 }
-
 
 SetupStatus setup_questions(setup_information *info)
 {

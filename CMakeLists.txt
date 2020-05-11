@@ -8,6 +8,7 @@ find_package(Git)
 
 pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(XWII REQUIRED libxwiimote)
+pkg_check_modules(SERIAL REQUIRED libserialport)
 
 if(GIT_FOUND)
 	execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --tags --first-parent
@@ -23,7 +24,7 @@ configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/versi
 	NEWLINE_STYLE LF
 )
 
-include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${XWII_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
+include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${XWII_INCLUDE_DIRS} ${SERIAL_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
 
 add_executable(${PROJECT_NAME}
 	main.cpp
@@ -40,4 +41,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_compile_options(${PROJECT_NAME} PRIVATE -march=native -Wall -Wextra -Wpedantic)
 
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} ${XWII_LIBRARIES} bcm2835)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} ${SERIAL_LIBRARIES} ${XWII_LIBRARIES} bcm2835)

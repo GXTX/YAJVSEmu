@@ -7,11 +7,15 @@ Building
 ---------
 ##### Prerequisites
 
+Ubuntu 20.04
+
 ```sh
-sudo apt install build-essential cmake libsdl2-dev libxwiimote-dev
+sudo apt install build-essential cmake libsdl2-dev libxwiimote-dev libserialport-dev
 ```
 
-*Note: You are also required to have BCM2835 installed, you can find this [here](https://www.airspayce.com/mikem/bcm2835/ "here").*
+*Important: You are also required to have BCM2835 installed, you can find this [here](https://www.airspayce.com/mikem/bcm2835/ "here").*
+
+*Note: It is also assumed you've properly created the gpio group and others as required. Checkout [this](https://wiki.ubuntu.com/ARM/RaspberryPi/ "this") for more information.*
 
 ##### Build
 ```
@@ -21,6 +25,7 @@ mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
 ```
+
 Running
 ---------
 
