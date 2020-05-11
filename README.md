@@ -10,7 +10,7 @@ Building
 Ubuntu 20.04
 
 ```sh
-sudo apt install build-essential cmake libsdl2-dev libxwiimote-dev libserialport-dev
+sudo apt install build-essential cmake pkg-config libsdl2-dev libxwiimote-dev libserialport-dev
 ```
 
 *Important: You are also required to have BCM2835 installed, you can find this [here](https://www.airspayce.com/mikem/bcm2835/ "here").*

@@ -19,6 +19,7 @@
 // *  59 Temple Place - Suite 330, Bostom, MA 02111-1307, USA.
 // *
 // *  (c) 2019 Luke Usher
+// *  (c) 2020 wutno (https://github.com/GXTX)
 // *
 // *  All rights reserved
 // *
