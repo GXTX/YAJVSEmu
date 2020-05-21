@@ -29,7 +29,7 @@ cmake --build .
 Running
 ---------
 
-Prior to use you must have a USB to RS485 adapter installed on your Pi, and JVS cable wired up like this.
+Prior to use you must have a USB to RS485 adapter installed on your Pi, and JVS cable wired up like this. The diodes used in this example are 4 1N4148's. The voltage across ground and the GPIO pin should be 2.5V with your arcade system running and YetAnother not started.
 
 [![wiring diagram](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/a1c453d78f1f51953c67901f4135050ef18d9d31/wiring_diagram.png "wiring diagram")](https://gist.githubusercontent.com/GXTX/d771608fb2dd0944c6d944dbf041acaf/raw/a1c453d78f1f51953c67901f4135050ef18d9d31/wiring_diagram.png "wiring diagram")
 
