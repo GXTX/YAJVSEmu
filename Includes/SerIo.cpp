@@ -86,7 +86,7 @@ int SerIo::Read(std::vector<uint8_t> &buffer)
 
 	int ret = sp_nonblocking_read(Port, buffer.data(), buffer.size());
 
-	if (ret <= 0) {
+	if (ret <= 4) {
 		return StatusCode::ReadError;
 	}
 	else {
