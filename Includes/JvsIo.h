@@ -75,6 +75,36 @@ typedef struct {
 } jvs_switch_player_inputs_t;
 
 typedef struct {
+	bool button[16] = { false };
+
+	uint8_t GetByte0() {
+		uint8_t value = 0;
+		value |= button[0] ? 1 << 7 : 0;
+		value |= button[1] ? 1 << 6 : 0;
+		value |= button[2] ? 1 << 5 : 0;
+		value |= button[3] ? 1 << 4 : 0;
+		value |= button[4] ? 1 << 3 : 0;
+		value |= button[5] ? 1 << 2 : 0;
+		value |= button[6] ? 1 << 1 : 0;
+		value |= button[7] ? 1 << 0 : 0;
+		return value;
+	}
+
+	uint8_t GetByte1() {
+		uint8_t value = 0;
+		value |= button[8]  ? 1 << 7 : 0;
+		value |= button[9]  ? 1 << 6 : 0;
+		value |= button[10] ? 1 << 5 : 0;
+		value |= button[11] ? 1 << 4 : 0;
+		value |= button[12] ? 1 << 3 : 0;
+		value |= button[13] ? 1 << 2 : 0;
+		value |= button[14] ? 1 << 1 : 0;
+		value |= button[15] ? 1 << 0 : 0;
+		return value;
+	}
+} jvs_switch_general_inputs_t;
+
+typedef struct {
 	bool test = false;
 	bool tilt_1 = false;
 	bool tilt_2 = false;
@@ -93,6 +123,7 @@ typedef struct {
 typedef struct {
 	jvs_switch_system_inputs_t system;
 	jvs_switch_player_inputs_t player[JVS_MAX_PLAYERS];
+	jvs_switch_general_inputs_t general;
 } jvs_switch_inputs_t;
 
 typedef struct {
@@ -230,6 +261,7 @@ private:
 	int Jvs_Command_21_ReadCoinInputs(uint8_t* data);
 	int Jvs_Command_22_ReadAnalogInputs(uint8_t* data);
 	int Jvs_Command_25_ReadScreenPosition(uint8_t* data);
+	int Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data);
 	int Jvs_Command_30_CoinSubtractionOutput(uint8_t* data);
 	int Jvs_Command_32_GeneralPurposeOutput(uint8_t* data);
 	int Jvs_Command_35_CoinAdditionOutput(uint8_t* data);

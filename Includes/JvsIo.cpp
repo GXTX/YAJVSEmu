@@ -130,13 +130,19 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 	ResponseBuffer.push_back(JVS_MAX_ANALOG); // number of analog input channels
 	ResponseBuffer.push_back(16); // 16 bits per analog input channel
 	ResponseBuffer.push_back(0);
+/*
+	// Input switches
+	ResponseBuffer.push_back(CapabilityCode::SwitchInputs);
+	ResponseBuffer.push_back(0);
+	ResponseBuffer.push_back(16);
+	ResponseBuffer.push_back(0);
 
 	// NOTE: SEGA hardware used/uses 12 bits, NAMCO is known to use 16 bits.
 	ResponseBuffer.push_back(CapabilityCode::ScreenPointerInputs);
 	ResponseBuffer.push_back(16); // 16bits for X
 	ResponseBuffer.push_back(16); // Y
 	ResponseBuffer.push_back(JVS_MAX_SCREEN_CHANNELS);
-
+*/
 	// Output capabilities
 	ResponseBuffer.push_back(CapabilityCode::GeneralPurposeOutputs);
 	ResponseBuffer.push_back(JVS_MAX_GPO); // number of outputs
@@ -269,6 +275,26 @@ int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
 	return 1;
 }
 
+// TODO: Verify with a test case...
+int JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data)
+{
+	uint8_t bytesPerSwitchGeneralInput = data[1]; //?
+	jvs_switch_general_inputs_t &switch_general_input = Inputs.switches.general;
+
+	ResponseBuffer.push_back(ReportCode::Handled);
+
+	for (int j = 0; j < bytesPerSwitchGeneralInput; j++) {
+		// If a title asks for more switch player inputs than we support, pad with dummy data
+		uint8_t value
+			= (j == 0) ? switch_general_input.GetByte0()
+			: (j == 1) ? switch_general_input.GetByte1()
+			: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
+		ResponseBuffer.push_back(value);
+	}
+
+	return 2;
+}
+
 int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 {
 	ResponseBuffer.push_back(ReportCode::Handled);
@@ -372,6 +398,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x21: i += Jvs_Command_21_ReadCoinInputs(command_data); break;
 			case 0x22: i += Jvs_Command_22_ReadAnalogInputs(command_data); break;
 			case 0x25: i += Jvs_Command_25_ReadScreenPosition(command_data); break;
+			case 0x26: i += Jvs_Command_26_ReadGeneralSwitchInputs(command_data); break;
 			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
 			case 0x35: i += Jvs_Command_35_CoinAdditionOutput(command_data); break;
