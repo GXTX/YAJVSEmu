@@ -29,9 +29,12 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
 	// For additional mappings use https://github.com/gabomdq/SDL_GameControllerDB
 	// Or use custom ones you generate yourself using SDL2's test app or
 	// 3rd party applications such as http://www.generalarcade.com/gamepadtool/
-	if (std::filesystem::exists("gamecontrollerdb.txt")) {
-		SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+	std::string map_file = "gamecontrollerdb.txt";
+	std::ifstream mapping(map_file.c_str());
+	if (mapping.good()) {
+		SDL_GameControllerAddMappingsFromFile(map_file.c_str());
 	}
+
 	sgc = SDL_GameControllerOpen(device_index);
 
 	if (sgc == nullptr) {
