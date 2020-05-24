@@ -22,6 +22,7 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
+#include <chrono>
 
 #include "JvsIo.h"
 #include "SerIo.h"
@@ -32,7 +33,6 @@
 
 #include <SDL.h>
 #include <xwiimote.h>
-#include <sched.h>
 #include <signal.h>
 
 typedef struct {
@@ -155,7 +155,7 @@ std::cout << "Debug - ";
 
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
 		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
-		usleep(500);
+		std::this_thread::sleep_for(std::chrono::microseconds(500));
 	}
 
 	std::cout << std::endl;
