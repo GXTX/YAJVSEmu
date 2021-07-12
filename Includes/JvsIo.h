@@ -184,21 +184,27 @@ typedef struct {
 class JvsIo
 {
 public:
+	enum Status {
+		Okay,
+		SyncError,
+		SumError,
+		EmptyResponseError,
+		ServerWaitingReply,
+	};
+
 	enum SenseStates {
 		NotConnected,
 		Connected,
 	};
 
-	//uint8_t* pSense = nullptr;				// Pointer to Sense line
 	SenseStates pSense = SenseStates::NotConnected;
 	bool pSenseChange;
 	jvs_input_states_t Inputs;
 
 	JvsIo(SenseStates sense);
-	size_t SendPacket(std::vector<uint8_t> &buffer);
-	size_t ReceivePacket(std::vector<uint8_t> &buffer);
+	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer);
+	JvsIo::Status ReceivePacket(std::vector<uint8_t> &buffer);
 	uint8_t GetDeviceId();
-	void Update();
 
 private:
 	const uint8_t SYNC_BYTE = 0xE0;
@@ -214,21 +220,21 @@ private:
 	void SendByte(std::vector<uint8_t> &buffer, uint8_t value);
 	void SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value);
 
-	enum StatusCode {
+	enum JvsStatusCode {
 		StatusOkay = 1,
 		UnsupportedCommand = 2,
 		ChecksumError = 3,
 		AcknowledgeOverflow = 4,
 	};
 
-	enum ReportCode {
+	enum JvsReportCode {
 		Handled = 1,
 		NotEnoughParameters = 2,
 		InvalidParameter = 3,
 		Busy = 4,
 	};
 
-	enum CapabilityCode {
+	enum JvsCapabilityCode {
 		EndOfCapabilities = 0x00,
 		// Input capabilities :
 		PlayerSwitchButtonSets = 0x01,

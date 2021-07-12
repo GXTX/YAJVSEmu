@@ -58,7 +58,7 @@ std::cout << "Release - ";
 #else
 std::cout << "Debug - ";
 #endif
-	std::cout << GIT_VERSION << " (" << __DATE__ << ")" << std::endl;
+	std::cout << GIT_VERSION << " (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
 
 	// Set thread priority to RT. We don't care if this
 	// fails but may be required for some systems.
@@ -97,8 +97,7 @@ std::cout << "Debug - ";
 	//	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
 	//}
 
-	int jvs_ret;
-
+	JvsIo::Status jvsStatus;
 	SerIo::Status serialStatus;
 
 	while (running) {
@@ -112,26 +111,21 @@ std::cout << "Debug - ";
 			continue;
 		}
 
-		jvs_ret = JVSHandler->ReceivePacket(SerialBuffer);
+		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
+		if (jvsStatus == JvsIo::Okay) {
+			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
+			SerialHandler->Write(&SerialBuffer);
+		}
 
-		if (jvs_ret > 1) {
-			SerialBuffer.clear();
-			jvs_ret = JVSHandler->SendPacket(SerialBuffer);
-
-			if (jvs_ret > 0) {
-				if(JVSHandler->pSenseChange){
-					if(JVSHandler->pSense == JvsIo::SenseStates::NotConnected) {
-						GPIOHandler->SetMode(GpIo::PinMode::In);
-					}
-					else {
-						GPIOHandler->SetMode(GpIo::PinMode::Out);
-						GPIOHandler->Write(GpIo::PinState::Low);
-					}
-					JVSHandler->pSenseChange = false;
-				}
-
-				SerialHandler->Write(&SerialBuffer);
+		if(JVSHandler->pSenseChange){
+			if(JVSHandler->pSense == JvsIo::NotConnected) {
+					GPIOHandler->SetMode(GpIo::In);
 			}
+			else {
+				GPIOHandler->SetMode(GpIo::Out);
+				GPIOHandler->Write(GpIo::Low);
+			}
+			JVSHandler->pSenseChange = false;
 		}
 
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro

@@ -55,7 +55,7 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 		// Set sense to 3 (2.5v) to instruct the baseboard we're ready.
 		pSense = SenseStates::NotConnected;
 		pSenseChange = true;
-		ResponseBuffer.push_back(ReportCode::Handled); // Note : Without this, Chihiro software stops sending packets (but JVS V3 doesn't send this?)
+		ResponseBuffer.push_back(JvsReportCode::Handled); // Note : Without this, Chihiro software stops sending packets (but JVS V3 doesn't send this?)
 		DeviceId = 0;
 	}
 	return 1;
@@ -68,7 +68,7 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 
 	pSense = SenseStates::Connected; // Set sense to 0v
 	pSenseChange = true;
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	return 1;
 }
@@ -76,7 +76,7 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 int JvsIo::Jvs_Command_10_GetBoardId()
 {
 	// Get Board ID
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	for (char& c : BoardID) {
 		ResponseBuffer.push_back(c);
@@ -87,7 +87,7 @@ int JvsIo::Jvs_Command_10_GetBoardId()
 
 int JvsIo::Jvs_Command_11_GetCommandFormat()
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(CommandFormatRevision);
 
 	return 0;
@@ -95,7 +95,7 @@ int JvsIo::Jvs_Command_11_GetCommandFormat()
 
 int JvsIo::Jvs_Command_12_GetJvsRevision()
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(JvsVersion);
 
 	return 0;
@@ -103,7 +103,7 @@ int JvsIo::Jvs_Command_12_GetJvsRevision()
 
 int JvsIo::Jvs_Command_13_GetCommunicationVersion()
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(CommunicationVersion);
 
 	return 0;
@@ -111,45 +111,45 @@ int JvsIo::Jvs_Command_13_GetCommunicationVersion()
 
 int JvsIo::Jvs_Command_14_GetCapabilities()
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	// Capabilities list (4 bytes each)
 
 	// Input capabilities
-	ResponseBuffer.push_back(CapabilityCode::PlayerSwitchButtonSets);
+	ResponseBuffer.push_back(JvsCapabilityCode::PlayerSwitchButtonSets);
 	ResponseBuffer.push_back(JVS_MAX_PLAYERS); // number of players
 	ResponseBuffer.push_back(13); // 13 button switches per player
 	ResponseBuffer.push_back(0);
 
-	ResponseBuffer.push_back(CapabilityCode::CoinSlots);
+	ResponseBuffer.push_back(JvsCapabilityCode::CoinSlots);
 	ResponseBuffer.push_back(JVS_MAX_COINS); // number of coin slots
 	ResponseBuffer.push_back(0);
 	ResponseBuffer.push_back(0);
 
-	ResponseBuffer.push_back(CapabilityCode::AnalogInputs);
+	ResponseBuffer.push_back(JvsCapabilityCode::AnalogInputs);
 	ResponseBuffer.push_back(JVS_MAX_ANALOG); // number of analog input channels
 	ResponseBuffer.push_back(16); // 16 bits per analog input channel
 	ResponseBuffer.push_back(0);
 /*
 	// Input switches
-	ResponseBuffer.push_back(CapabilityCode::SwitchInputs);
+	ResponseBuffer.push_back(JvsCapabilityCode::SwitchInputs);
 	ResponseBuffer.push_back(0);
 	ResponseBuffer.push_back(16);
 	ResponseBuffer.push_back(0);
 
 	// NOTE: SEGA hardware used/uses 12 bits, NAMCO is known to use 16 bits.
-	ResponseBuffer.push_back(CapabilityCode::ScreenPointerInputs);
+	ResponseBuffer.push_back(JvsCapabilityCode::ScreenPointerInputs);
 	ResponseBuffer.push_back(16); // 16bits for X
 	ResponseBuffer.push_back(16); // Y
 	ResponseBuffer.push_back(JVS_MAX_SCREEN_CHANNELS);
 */
 	// Output capabilities
-	ResponseBuffer.push_back(CapabilityCode::GeneralPurposeOutputs);
+	ResponseBuffer.push_back(JvsCapabilityCode::GeneralPurposeOutputs);
 	ResponseBuffer.push_back(JVS_MAX_GPO); // number of outputs
 	ResponseBuffer.push_back(0);
 	ResponseBuffer.push_back(0);
 
-	ResponseBuffer.push_back(CapabilityCode::EndOfCapabilities);
+	ResponseBuffer.push_back(JvsCapabilityCode::EndOfCapabilities);
 
 	return 0;
 }
@@ -157,7 +157,7 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 // TODO: Verify with a test case...
 int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	std::string main_board_id;
 
@@ -184,7 +184,7 @@ int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
 	uint8_t nr_switch_players = data[1];
 	uint8_t bytesPerSwitchPlayerInput = data[2];
 
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	ResponseBuffer.push_back(Inputs.switches.system.GetByte0());
 
@@ -208,7 +208,7 @@ int JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t* data)
 	static jvs_coin_slots_t default_coin_slot;
 	uint8_t nr_coin_slots = data[1];
 	
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	for (int i = 0; i < nr_coin_slots; i++) {
 		const uint8_t bytesPerCoinSlot = 2;
@@ -231,7 +231,7 @@ int JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t* data)
 	static jvs_analog_input_t default_analog;
 	uint8_t nr_analog_inputs = data[1];
 
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	for (int i = 0; i < nr_analog_inputs; i++) {
 		const uint8_t bytesPerAnalogInput = 2;
@@ -255,7 +255,7 @@ int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
 	static jvs_screen_pos_input_t default_screen_pos;
 	uint8_t nr_screen_inputs = data[1];
 
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	for (int i = 0; i < nr_screen_inputs; i++) {
 		const uint8_t bytesPerScreenInput = 4;
@@ -281,7 +281,7 @@ int JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data)
 	uint8_t bytesPerSwitchGeneralInput = data[1]; //?
 	jvs_switch_general_inputs_t &switch_general_input = Inputs.switches.general;
 
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	for (int j = 0; j < bytesPerSwitchGeneralInput; j++) {
 		// If a title asks for more switch player inputs than we support, pad with dummy data
@@ -297,7 +297,7 @@ int JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data)
 
 int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	uint8_t slot = data[1] - 1;
 	uint16_t decrement = (data[2] << 8) | data[3];
@@ -316,7 +316,7 @@ int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 {
 	uint8_t banks = data[1];
 
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 #ifdef DEBUG_GENERAL_OUT
 	std::cout << "JvsIo::Jvs_Command_32_GeneralPurposeOutput:";
@@ -334,7 +334,7 @@ int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 
 int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
 {
-	ResponseBuffer.push_back(ReportCode::Handled);
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
 	uint8_t slot = data[1] - 1;
 	uint16_t increment = (data[2] << 8) | data[3];
@@ -376,7 +376,7 @@ uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
 void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& packet)
 {
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
-	ResponseBuffer.push_back(StatusCode::StatusOkay); // Assume we'll handle the command just fine
+	ResponseBuffer.push_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
 
 	for (size_t i = 0; i < packet.size(); i++) {
 
@@ -403,9 +403,9 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
 			case 0x35: i += Jvs_Command_35_CoinAdditionOutput(command_data); break;
 			default:
-				// Overwrite the verly-optimistic StatusCode::StatusOkay with Status::Unsupported command
+				// Overwrite the verly-optimistic JvsStatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.
-				ResponseBuffer[0] = StatusCode::UnsupportedCommand;
+				ResponseBuffer[0] = JvsStatusCode::UnsupportedCommand;
 				std::printf("JvsIo::HandlePacket: Unhandled Command %02X", packet[i]);
 				std::cout << std::endl;
 				return;
@@ -413,7 +413,7 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 	}
 }
 
-size_t JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
+JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 {
 	// Scan the packet header
 	jvs_packet_header_t header;
@@ -428,7 +428,7 @@ size_t JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 		std::cout << " [Missing SYNC_BYTE!]" << std::endl;
 #endif
 		// If it's wrong, return we've processed (actually, skipped) one byte
-		return 1;
+		return SyncError;
 	}
 
 	// Read the target and count bytes
@@ -456,7 +456,8 @@ size_t JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Verify checksum - skip packet if invalid
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
-		ResponseBuffer.push_back(StatusCode::ChecksumError);
+		ResponseBuffer.push_back(JvsStatusCode::ChecksumError);
+		return SumError;
 	} else {
 		// If the packet was intended for us, we need to handle it
 		if (header.target == TARGET_BROADCAST || header.target == DeviceId) {
@@ -464,7 +465,7 @@ size_t JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 		}
 	}
 
-	return packet.size() + 1;
+	return Okay;
 }
 
 void JvsIo::SendByte(std::vector<uint8_t> &buffer, uint8_t value)
@@ -483,10 +484,10 @@ void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 	SendByte(buffer, value);
 }
 
-size_t JvsIo::SendPacket(std::vector<uint8_t> &buffer)
+JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 {
 	if (ResponseBuffer.empty()) {
-		return 0;
+		return EmptyResponseError;
 	}
 
 	// Build a JVS response packet containing the payload
@@ -524,5 +525,5 @@ size_t JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 	std::cout << std::endl;
 #endif
 
-	return buffer.size();
+	return Okay;
 }
