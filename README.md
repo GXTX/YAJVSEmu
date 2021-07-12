@@ -1,7 +1,7 @@
-YetAnotherJVSEmu
+YAJVSEmu
 ============
 
-YetAnotherJVSEmu is a program which aims to emulate the SEGA JVS protocol using mostly off-the-shelf solutions, and a way for me to play around with new things. Supports *many many* different types of controllers and wheels thanks to using SDL2 as the backend for Joystick and Gamepad support, have a controller or device that isn't mapped? Checkout [this project for more information](https://github.com/gabomdq/SDL_GameControllerDB "this project for more information"). Just plop the file in the same directory as the executable and it'll load the configuration from it. Also supports using a Wii IR controller as a X/Y gun.
+YAJVSEmu (*YetAnother*JVSEmu) is a program which aims to emulate the SEGA JVS protocol using mostly off-the-shelf solutions, and a way for me to play around with new things. Supports *many many* different types of controllers and wheels thanks to using SDL2 as the backend for Joystick and Gamepad support, have a controller or device that isn't mapped? Checkout [this project for more information](https://github.com/gabomdq/SDL_GameControllerDB "this project for more information"). Just plop the file in the same directory as the executable and it'll load the configuration from it. Also supports using a Wii IR controller as a X/Y gun.
 
 Building
 ---------
@@ -19,8 +19,8 @@ sudo apt install build-essential cmake pkg-config libsdl2-dev libxwiimote-dev li
 
 ##### Build
 ```
-git clone https://github.com/GXTX/YetAnotherJVSEmu
-cd YetAnotherJVSEmu
+git clone https://github.com/GXTX/YAJVSEmu
+cd YAJVSEmu
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
@@ -35,6 +35,6 @@ Prior to use you must have a USB to RS485 adapter installed on your Pi, and JVS 
 
 The program *must* be ran as root, and must be running before turning on your system. There is also **zero** prior configuration required, just run and the program will ask you information about your environment.
 ```
-sudo ./YetAnotherJVSEmu
+sudo ./YAJVSEmu
 ```
 

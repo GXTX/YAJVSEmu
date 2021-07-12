@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(YetAnotherJVSEmu)
+project(YAJVSEmu)
 
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
