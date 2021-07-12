@@ -23,6 +23,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <csignal>
 
 #include "JvsIo.h"
 #include "SerIo.h"
@@ -33,9 +34,8 @@
 
 #include <SDL.h>
 #include <xwiimote.h>
-#include <signal.h>
 
-std::atomic<bool> running = true;
+volatile std::atomic<bool> running = true;
 
 void sig_handle(int sig) {
 	switch (sig) {
@@ -47,6 +47,7 @@ void sig_handle(int sig) {
 	}
 }
 
+// TODO: Replace with ini setup
 static const std::string serialPort = "/dev/ttyS0";
 
 int main()
@@ -64,6 +65,9 @@ std::cout << "Debug - ";
 	struct sched_param params;
 	params.sched_priority = sched_get_priority_max(SCHED_FIFO);
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
+
+	// Handle quitting via signals
+	std::signal(SIGINT, sig_handle);
 
 	// TODO: maybe put set these as shared in serio?
 	std::vector<uint8_t> SerialBuffer;
@@ -92,12 +96,6 @@ std::cout << "Debug - ";
 	//else {
 	//	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
 	//}
-
-	struct sigaction action;
-	action.sa_handler = &sig_handle;
-	action.sa_flags = 0;
-	sigaction(SIGINT, &action, NULL);
-	sigaction(SIGTERM, &action, NULL);
 
 	int jvs_ret;
 
@@ -138,7 +136,7 @@ std::cout << "Debug - ";
 
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
 		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
-		std::this_thread::sleep_for(std::chrono::microseconds(500));
+		std::this_thread::sleep_for(std::chrono::microseconds(250));
 	}
 
 	std::cout << std::endl;
