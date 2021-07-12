@@ -13,11 +13,11 @@ pkg_check_modules(SERIAL REQUIRED libserialport)
 if(GIT_FOUND)
 	execute_process(COMMAND "${GIT_EXECUTABLE}" describe --always --tags --first-parent
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		OUTPUT_VARIABLE _GIT_VERSION
+		OUTPUT_VARIABLE GIT_VERSION
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 else()
-	set(_GIT_VERSION "unknown")
+	set(GIT_VERSION "unknown")
 endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h" @ONLY

@@ -72,7 +72,7 @@ std::cout << "Release - ";
 #else
 std::cout << "Debug - ";
 #endif
-	std::cout << _GIT_VERSION << " (" << __DATE__ << ")" << std::endl;
+	std::cout << GIT_VERSION << " (" << __DATE__ << ")" << std::endl;
 
 	setup_information setup;
 
