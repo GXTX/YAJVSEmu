@@ -48,7 +48,7 @@ void sig_handle(int sig) {
 }
 
 // TODO: Replace with ini setup
-static const std::string serialPort = "/dev/ttyS0";
+static char *dev = "/dev/ttyS0";
 
 int main()
 {
@@ -82,7 +82,7 @@ std::cout << "Debug - ";
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
 	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseStates::NotConnected));
 
-	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(serialPort.c_str()));
+	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev));
 	if (!SerialHandler->IsInitialized) {
 		std::cerr << "Coudln't initiate the serial controller." << std::endl;
 		return 1;
@@ -130,7 +130,7 @@ std::cout << "Debug - ";
 					JVSHandler->pSenseChange = false;
 				}
 
-				SerialHandler->Write(SerialBuffer);
+				SerialHandler->Write(&SerialBuffer);
 			}
 		}
 

@@ -43,8 +43,8 @@ public:
 	SerIo(char *devicePath);
 	~SerIo();
 
-	Status Read(std::vector<uint8_t> *buffer);
-	Status Write(std::vector<uint8_t> *buffer);
+	SerIo::Status Read(std::vector<uint8_t> *buffer);
+	SerIo::Status Write(std::vector<uint8_t> *buffer);
 private:
 	int SerialHandler;
 

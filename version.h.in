@@ -1,2 +1,2 @@
-#cmakedefine _GIT_VERSION "@GIT_VERSION@"
+#cmakedefine GIT_VERSION "@GIT_VERSION@"
 #cmakedefine PROJECT_NAME "@PROJECT_NAME@"

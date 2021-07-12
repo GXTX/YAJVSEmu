@@ -52,7 +52,7 @@ SerIo::~SerIo()
 	sp_close(Port);
 }
 
-int SerIo::Write(std::vector<uint8_t> *buffer)
+SerIo::Status SerIo::Write(std::vector<uint8_t> *buffer)
 {
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
@@ -80,7 +80,7 @@ int SerIo::Write(std::vector<uint8_t> *buffer)
 	return Okay;
 }
 
-Status SerIo::Read(std::vector<uint8_t> &buffer)
+SerIo::Status SerIo::Read(std::vector<uint8_t> *buffer)
 {
 	int bytes = sp_input_waiting(Port);
 
