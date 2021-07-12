@@ -30,11 +30,12 @@
 class SerIo
 {
 public:
-	enum StatusCode {
+	enum Status {
 		Okay,
 		Timeout,
 		ReadError,
 		WriteError,
+		ZeroSizeError,
 	};
 
 	bool IsInitialized;
@@ -42,8 +43,8 @@ public:
 	SerIo(char *devicePath);
 	~SerIo();
 
-	int Read(std::vector<uint8_t> &buffer);
-	int Write(std::vector<uint8_t> &buffer);
+	Status Read(std::vector<uint8_t> *buffer);
+	Status Write(std::vector<uint8_t> *buffer);
 private:
 	int SerialHandler;
 

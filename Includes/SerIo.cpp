@@ -21,6 +21,8 @@
 
 #include "SerIo.h"
 
+//#define DEBUG_SERIAL
+
 SerIo::SerIo(char *devicePath)
 {
 	sp_new_config(&PortConfig);
@@ -50,54 +52,59 @@ SerIo::~SerIo()
 	sp_close(Port);
 }
 
-int SerIo::Write(std::vector<uint8_t> &buffer)
+int SerIo::Write(std::vector<uint8_t> *buffer)
 {
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
-	for(uint8_t i = 0; i < buffer.size(); i++) {
-		std::printf(" %02X", buffer.at(i));
+	for(uint8_t i = 0; i < buffer->size(); i++) {
+		std::printf(" %02X", buffer->at(i));
 	}
 	std::cout << std::endl;
 #endif
-	int ret = sp_nonblocking_write(Port, buffer.data(), buffer.size());
+
+	if (buffer->size() == 0) {
+		return ZeroSizeError;
+	}
+
+	int ret = sp_nonblocking_write(Port, buffer->data(), buffer->size());
 
 	if (ret <= 0) {
-		return StatusCode::WriteError;
-	}
-	else if (ret != (int)buffer.size()) {
-		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, (int)buffer.size());
-		return StatusCode::WriteError;
+		return WriteError;
+	} else if (ret != (int)buffer->size()) {
+#ifdef DEBUG_SERIAL
+		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, (int)buffer->size());
+#endif
+		return WriteError;
 	}
 
-	return StatusCode::Okay;
+	return Okay;
 }
 
-int SerIo::Read(std::vector<uint8_t> &buffer)
+Status SerIo::Read(std::vector<uint8_t> &buffer)
 {
-	// TODO: causing "high" cpu load
 	int bytes = sp_input_waiting(Port);
 
-	if (bytes <= 0) {
-		// TODO: this doesn't have to mean a readerror, could just be a zero size waiting
-		return StatusCode::ReadError;
+	if (bytes == 0) {
+		return ZeroSizeError;
+	} else if (bytes < 0) {
+		return ReadError;
 	}
 
-	buffer.resize(bytes);
+	buffer->resize(bytes);
 
-	int ret = sp_nonblocking_read(Port, buffer.data(), buffer.size());
+	int ret = sp_nonblocking_read(Port, buffer->data(), buffer->size());
 
-	if (ret <= 4) {
-		return StatusCode::ReadError;
-	}
-	else {
-		#ifdef DEBUG_SERIAL
-		std::cout << "SerIo::Read:";
-		for (size_t i = 0; i < buffer.size(); i++) {
-			std::printf(" %02X", buffer.at(i));
-		}
-		std::cout << std::endl;
-		#endif
+	if (ret <= 0) {
+		return ReadError;
 	}
 
-	return StatusCode::Okay;
+#ifdef DEBUG_SERIAL
+	std::cout << "SerIo::Read:";
+	for (size_t i = 0; i < buffer->size(); i++) {
+		std::printf(" %02X", buffer->at(i));
+	}
+	std::cout << std::endl;
+#endif
+
+	return Okay;
 }
