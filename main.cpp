@@ -32,7 +32,9 @@
 #include "WiiIo.h"
 #include "version.h"
 
-volatile std::atomic<bool> running = true;
+std::atomic<bool> running = true;
+
+auto delay = std::chrono::microseconds(750);
 
 void sig_handle(int sig) {
 	switch (sig) {
@@ -102,7 +104,7 @@ std::cout << "Debug - ";
 
 		serialStatus = SerialHandler->Read(&SerialBuffer);
 		if (serialStatus != SerIo::Okay) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(250));
+			std::this_thread::sleep_for(delay);
 			continue;
 		}
 
@@ -114,7 +116,7 @@ std::cout << "Debug - ";
 
 		if(JVSHandler->pSenseChange){
 			if(JVSHandler->pSense == JvsIo::NotConnected) {
-					GPIOHandler->SetMode(GpIo::In);
+				GPIOHandler->SetMode(GpIo::In);
 			}
 			else {
 				GPIOHandler->SetMode(GpIo::Out);
@@ -125,7 +127,7 @@ std::cout << "Debug - ";
 
 		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
 		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
-		std::this_thread::sleep_for(std::chrono::microseconds(250));
+		std::this_thread::sleep_for(delay);
 	}
 
 	std::cout << std::endl;
