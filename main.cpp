@@ -32,9 +32,6 @@
 #include "WiiIo.h"
 #include "version.h"
 
-#include <SDL.h>
-#include <xwiimote.h>
-
 volatile std::atomic<bool> running = true;
 
 void sig_handle(int sig) {
@@ -69,10 +66,6 @@ std::cout << "Debug - ";
 	// Handle quitting via signals
 	std::signal(SIGINT, sig_handle);
 
-	// TODO: maybe put set these as shared in serio?
-	std::vector<uint8_t> SerialBuffer;
-	SerialBuffer.reserve(255 * 2); //max JVS packet * 2
-
 	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
 	if (!GPIOHandler->IsInitialized) {
 		std::cerr << "Couldn't initiate GPIO and \"NONE\" wasn't explicitly set." << std::endl;
@@ -99,6 +92,8 @@ std::cout << "Debug - ";
 
 	JvsIo::Status jvsStatus;
 	SerIo::Status serialStatus;
+
+	std::vector<uint8_t> SerialBuffer;
 
 	while (running) {
 		if (!SerialBuffer.empty()) {

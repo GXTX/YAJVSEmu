@@ -29,12 +29,6 @@
 #include <vector>
 #include <iostream>
 
-typedef struct {
-	uint8_t sync;
-	uint8_t target;
-	uint8_t count;
-} jvs_packet_header_t;
-
 #define JVS_MAX_PLAYERS (2)
 #define JVS_MAX_ANALOG (8)
 #define JVS_MAX_COINS (JVS_MAX_PLAYERS)
@@ -210,12 +204,12 @@ private:
 	const uint8_t SYNC_BYTE = 0xE0;
 	const uint8_t ESCAPE_BYTE = 0xD0;
 
-	const uint8_t TARGET_MASTER_DEVICE = 0x00;
+	const uint8_t TARGET_MASTER = 0x00;
 	const uint8_t TARGET_BROADCAST = 0xFF;	
 
 	uint8_t GetByte(std::vector<uint8_t> &buffer);
 	uint8_t GetEscapedByte(std::vector<uint8_t> &buffer);
-	void HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& packet);
+	void HandlePacket(std::vector<uint8_t>& packet);
 
 	void SendByte(std::vector<uint8_t> &buffer, uint8_t value);
 	void SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value);

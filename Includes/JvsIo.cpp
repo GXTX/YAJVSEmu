@@ -29,7 +29,6 @@
 
 //#define DEBUG_JVS_PACKETS
 
-// We will emulate SEGA 837-13551 IO Board
 JvsIo::JvsIo(SenseStates sense)
 {
 	pSense = sense;
@@ -350,30 +349,7 @@ int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
 	return 3;
 }
 
-uint8_t JvsIo::GetByte(std::vector<uint8_t> &buffer)
-{
-	uint8_t value = buffer.at(0);
-	buffer.erase(buffer.begin());
-
-#ifdef DEBUG_JVS_PACKETS
-	std::printf(" %02X", value);
-#endif
-	return value;
-}
-
-uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
-{
-	uint8_t value = GetByte(buffer);
-
-	// Special case: 0xD0 is an exception byte that actually returns the next byte + 1
-	if (value == ESCAPE_BYTE) {
-		value = GetByte(buffer) + 1;
-	}
-
-	return value;
-}
-
-void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& packet)
+void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 {
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
 	ResponseBuffer.push_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
@@ -413,35 +389,46 @@ void JvsIo::HandlePacket(jvs_packet_header_t* header, std::vector<uint8_t>& pack
 	}
 }
 
+// TODO: Slow
+uint8_t JvsIo::GetByte(std::vector<uint8_t> &buffer)
+{
+	uint8_t value = buffer.at(0);
+	buffer.erase(buffer.begin());
+
+	return value;
+}
+
+uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
+{
+	uint8_t value = GetByte(buffer);
+
+	// Special case: 0xD0 is an exception byte that actually returns the next byte + 1
+	if (value == ESCAPE_BYTE) {
+		value = GetByte(buffer) + 1;
+	}
+
+	return value;
+}
+
 JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 {
-	// Scan the packet header
-	jvs_packet_header_t header;
-
 	// First, read the sync byte
-#ifdef DEBUG_JVS_PACKETS
-	std::cout << "JvsIo::ReceivePacket:";
-#endif
-	header.sync = GetByte(buffer); // Do not unescape the sync-byte!
-	if (header.sync != SYNC_BYTE) {
-#ifdef DEBUG_JVS_PACKETS
-		std::cout << " [Missing SYNC_BYTE!]" << std::endl;
-#endif
-		// If it's wrong, return we've processed (actually, skipped) one byte
+	if (GetByte(buffer) != SYNC_BYTE) { // Do not unescape the sync-byte!
+		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!";
 		return SyncError;
 	}
 
 	// Read the target and count bytes
-	header.target = GetEscapedByte(buffer);
-	header.count = GetEscapedByte(buffer);
+	uint8_t target = GetEscapedByte(buffer);
+	uint8_t count = GetEscapedByte(buffer);
 
 	// Calculate the checksum
-	uint8_t actual_checksum = header.target + header.count;
+	uint8_t actual_checksum = target + count;
 
 	// Decode the payload data
 	// TODO: don't put in another vector just to send off
 	std::vector<uint8_t> packet;
-	for (int i = 0; i < header.count - 1; i++) { // Note : -1 to avoid adding the checksum byte to the packet
+	for (int i = 0; i < count - 1; i++) { // Note : -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
 		packet.push_back(value);
 		actual_checksum += value;
@@ -449,9 +436,6 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 
 	// Read the checksum from the last byte
 	uint8_t packet_checksum = GetEscapedByte(buffer);
-#ifdef DEBUG_JVS_PACKETS
-	std::cout << std::endl;
-#endif
 
 	// Verify checksum - skip packet if invalid
 	ResponseBuffer.clear();
@@ -460,8 +444,8 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 		return SumError;
 	} else {
 		// If the packet was intended for us, we need to handle it
-		if (header.target == TARGET_BROADCAST || header.target == DeviceId) {
-			HandlePacket(&header, packet);
+		if (target == TARGET_BROADCAST || target == DeviceId) {
+			HandlePacket(packet);
 		}
 	}
 
@@ -486,30 +470,24 @@ void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 
 JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 {
+	// This shouldn't happen...
 	if (ResponseBuffer.empty()) {
 		return EmptyResponseError;
 	}
 
-	// Build a JVS response packet containing the payload
-	jvs_packet_header_t header;
-	header.sync = SYNC_BYTE;
-	header.target = TARGET_MASTER_DEVICE;
-	header.count = (uint8_t)ResponseBuffer.size() + 1; // Set data size to payload + 1 checksum byte
-	// TODO : What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets??
-
+	// TODO : What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
-	SendByte(buffer, header.sync); // Do not escape the sync byte!
-	SendEscapedByte(buffer, header.target);
-	SendEscapedByte(buffer, header.count);
+	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
+	SendEscapedByte(buffer, TARGET_MASTER);
+	SendEscapedByte(buffer, (uint8_t)ResponseBuffer.size() + 1);
 
-	// Calculate the checksum
-	uint8_t packet_checksum = header.target + header.count;
+	// Calculate the checksum, normally you would add the target, but we only talk to TARGET_MASTER
+	uint8_t packet_checksum = (uint8_t)ResponseBuffer.size() + 1;
 
 	// Encode the payload data
-	for (size_t i = 0; i < ResponseBuffer.size(); i++) {
-		uint8_t value = ResponseBuffer[i];
-		SendEscapedByte(buffer, value);
-		packet_checksum += value;
+	for (uint8_t n : ResponseBuffer) {
+		SendEscapedByte(buffer, n);
+		packet_checksum += n;
 	}
 
 	// Write the checksum to the last byte
@@ -519,8 +497,8 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 
 #ifdef DEBUG_JVS_PACKETS
 	std::cout << "JvsIo::SendPacket:";
-	for (size_t i = 0; i < buffer.size(); i++) {
-		std::printf(" %02X", buffer.at(i));
+	for (uint8_t n : buffer) {
+		std::printf(" %02X", n);
 	}
 	std::cout << std::endl;
 #endif
