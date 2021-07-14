@@ -182,7 +182,8 @@ public:
 		Okay,
 		SyncError,
 		SumError,
-		EmptyResponseError,
+		CountError,
+		EmptyResponse,
 		ServerWaitingReply,
 	};
 

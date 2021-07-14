@@ -414,13 +414,23 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 {
 	// First, read the sync byte
 	if (GetByte(buffer) != SYNC_BYTE) { // Do not unescape the sync-byte!
-		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!";
+#ifdef DEBUG_JVS_PACKETS
+		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!\n";
+#endif
 		return SyncError;
 	}
 
 	// Read the target and count bytes
 	uint8_t target = GetEscapedByte(buffer);
 	uint8_t count = GetEscapedByte(buffer);
+
+	// This can happen if we read too fast or we start *after* master already has a slave.
+	if (count != buffer.size()) {
+#ifdef DEBUG_JVS_PACKETS
+		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
+#endif
+		return CountError;
+	}
 
 	// Calculate the checksum
 	uint8_t actual_checksum = target + count;
@@ -441,7 +451,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
 		ResponseBuffer.push_back(JvsStatusCode::ChecksumError);
-		return SumError;
+		return SumError; // TODO: Master expects a response to this so we need to reply instead of just returning
 	} else {
 		// If the packet was intended for us, we need to handle it
 		if (target == TARGET_BROADCAST || target == DeviceId) {
@@ -472,10 +482,10 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 {
 	// This shouldn't happen...
 	if (ResponseBuffer.empty()) {
-		return EmptyResponseError;
+		return EmptyResponse;
 	}
 
-	// TODO : What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
+	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
 	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
 	SendEscapedByte(buffer, TARGET_MASTER);

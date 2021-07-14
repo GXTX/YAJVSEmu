@@ -34,7 +34,8 @@
 
 std::atomic<bool> running = true;
 
-auto delay = std::chrono::microseconds(150);
+// TODO: See if we can go lower
+auto delay = std::chrono::microseconds(100);
 
 void sig_handle(int sig) {
 	switch (sig) {
@@ -51,26 +52,29 @@ static char *dev = "/dev/ttyUSB0";
 
 int main()
 {
-	std::cout << PROJECT_NAME << ": ";
+	std::printf("%s: %s - %s (%s %s)\n", PROJECT_NAME,
 #ifdef NDEBUG
-std::cout << "Release - ";
+"Release",
 #else
-std::cout << "Debug - ";
+"Debug",
 #endif
-	std::cout << GIT_VERSION << " (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
+	GIT_VERSION, __DATE__, __TIME__);
 
+#ifdef REAL_TIME
 	// Set thread priority to RT. We don't care if this
 	// fails but may be required for some systems.
 	struct sched_param params;
 	params.sched_priority = sched_get_priority_max(SCHED_FIFO);
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
+#endif
 
-	// Handle quitting via signals
+	// Handle quitting gracefully via signals
 	std::signal(SIGINT, sig_handle);
+	std::signal(SIGTERM, sig_handle);
 
 	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
 	if (!GPIOHandler->IsInitialized) {
-		std::cerr << "Couldn't initiate GPIO and \"NONE\" wasn't explicitly set." << std::endl;
+		std::cerr << "Couldn't initalize GPIO controller and 'NONE' wasn't explicitly set.\n";
 		return 1;
 	}
 
@@ -79,7 +83,7 @@ std::cout << "Debug - ";
 
 	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev));
 	if (!SerialHandler->IsInitialized) {
-		std::cerr << "Coudln't initiate the serial controller." << std::endl;
+		std::cerr << "Coudln't initiate the serial controller.\n";
 		return 1;
 	}
 
@@ -130,6 +134,5 @@ std::cout << "Debug - ";
 		std::this_thread::sleep_for(delay);
 	}
 
-	std::cout << std::endl;
 	return 0;
 }
