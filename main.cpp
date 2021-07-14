@@ -34,7 +34,7 @@
 
 std::atomic<bool> running = true;
 
-auto delay = std::chrono::microseconds(750);
+auto delay = std::chrono::microseconds(150);
 
 void sig_handle(int sig) {
 	switch (sig) {
@@ -47,7 +47,7 @@ void sig_handle(int sig) {
 }
 
 // TODO: Replace with ini setup
-static char *dev = "/dev/ttyS0";
+static char *dev = "/dev/ttyUSB0";
 
 int main()
 {
@@ -86,7 +86,7 @@ std::cout << "Debug - ";
 	// Spawn lone SDL2 or WiiIo input thread.
 	// NOTE: There probably is no reason we can't have both of these running
 	//if (setup.sdlbackend) {
-	//	std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, setup.sdldeviceindex)).detach();
+		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, 0)).detach();
 	//}
 	//else {
 	//	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
