@@ -21,20 +21,21 @@
 
 #include "WiiIo.h"
 
+//#define DEBUG_IR_POS
+
 WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 {
 	Inputs = jvs_inputs;
 	struct xwii_monitor *mon;
 	int numberOfControllers = 0;
-	int ret;
 	int i = 0;
 
 	numberOfPlayers = players;
 
-	// Start scan looking for WiiMotes
+	// Start scan looking for Wii Remotes
 	mon = xwii_monitor_new(false, false);
 	if (!mon) {
-		std::cout << "WiiIo::WiiIo: Unable to create monitor." << std::endl;
+		std::puts("WiiIo::WiiIo: Unable to create monitor.");
 	}
 
 	while (true) {
@@ -42,33 +43,26 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 			break;
 		}
 		controllers.controller[i] = xwii_monitor_poll(mon);
-		std::printf("WiiIo::WiiIo: Found device #%d: %s", ++numberOfControllers, controllers.controller[i].c_str());
-		std::cout << std::endl;
+		std::printf("WiiIo::WiiIo: Found device #%d: %s\n", ++numberOfControllers, controllers.controller[i].c_str());
 		i++;
 	}
 
 	xwii_monitor_unref(mon);
 
-	// TODO: There is currently a bug in libxwiimote where Nyko controllers aren't able to get IR most of the time
-	// There seems to be a fix in polling for WATCH events & then 'refreshing' everything, I think it's fair to
-	// hang this thread until we have a solid IR connection so we need a loop to sit waiting for the watch and 'refreshing'
-	// until we have the connection.
-	for (i = 0; i < numberOfControllers; i++) {
-		ret = xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
-		if (ret) {
-			std::cout << "WiiIo::WiiIo: Unable to connect controller: " <<
-				std::printf("%d", ret) << std::endl;
-		}
-		else {
-			ret = xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
-			if (ret) {
-				while (xwii_iface_open(controllers.interface[i], XWII_IFACE_IR)) {
-					std::puts("Trying to open IR interface...");
-				}
+	// NOTE: There is a bug with xwiimote where Nyko controllers wont always enable their IR interface,
+	// so we need to make sure this is opened. It's possible to stall the thread and attempt to connect
+	// forever but it's *obviously* imporant that we have access to IR.
+	for (int i = 0; i < numberOfControllers; i++) {
+		while (true) {
+			std::puts("WiiIo::WiiIo: Connecting Wii Remote...");
+			xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
+			xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL);
+			if (xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_IR) {
+				controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
+				std::puts("WiiIo::WiiIo: Successfully connected Wii Remote.");
+				break;
 			}
-			std::printf("WiiIo::WiiIo: Successfully connected %s.", XWII__NAME);
-			controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
-			std::cout << std::endl;
+			xwii_iface_unref(controllers.interface[i]);
 		}
 	}
 }
@@ -95,7 +89,6 @@ void WiiIo::Loop()
 			if (errno != EINTR) {
 				ret = -errno;
 				std::printf("WiiIo::Loop: Cannot poll fds: %d", ret);
-				std::cout << std::endl;
 				break;
 			}
 		}
@@ -105,7 +98,6 @@ void WiiIo::Loop()
 			if (ret) {
 				if (ret != -EAGAIN) {
 					std::printf("WiiIo::Loop: Read failed with error : %d", ret);
-					std::cout << std::endl;
 					break;
 				}
 			} else {
@@ -129,10 +121,10 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key* button)
 		case XWII_KEY_MINUS: Inputs->switches.system.test = button->state; break;
 		case XWII_KEY_HOME: Inputs->switches.player[player].service = button->state; break;
 		case XWII_KEY_PLUS: Inputs->switches.player[player].start = button->state; break;
-		/*case XWII_KEY_UP: Inputs->switches.player[player].up = button->state; break;
+		case XWII_KEY_UP: Inputs->switches.player[player].up = button->state; break;
 		case XWII_KEY_DOWN: Inputs->switches.player[player].down = button->state; break;
 		case XWII_KEY_LEFT: Inputs->switches.player[player].left = button->state; break;
-		case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;*/
+		case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;
 		default: break;
 	}
 }
@@ -145,21 +137,18 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType 
 	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]))  {
 		middlex = (ir[0].x + ir[1].x) / 2;
 		middley = (ir[0].y + ir[1].y) / 2;
-	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) { // NOTE: There is a bug with libxwiimote where we will sometimes see 1 & 3 IR positions.
+	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) { // NOTE: Bug with libxwiimote where we see 1 & 3 IR positions.
 		middlex = (ir[0].x + ir[2].x) / 2;
 		middley = (ir[0].y + ir[2].y) / 2;
 	} else {
 		return;
 	}
 
-	float valuex = middlex - 1023;
-	float valuey = middley;
-
-	uint16_t finalx = std::fabs(valuex / 1023) * 0xFFFF;
-	uint16_t finaly = std::fabs(valuey / 1023) * 0xFFFF;
+	uint16_t finalx = std::fabs((middlex - 1023) / 1023) * 0xFFFF;
+	uint16_t finaly = std::fabs(middley / 1023) * 0xFFFF;
 
 #ifdef DEBUG_IR_POS
-	std::cout << std::printf("POS: %d/%d", finalx, finaly) << std::endl;
+	std::printf("POS: %04x/%04x\n", finalx, finaly);
 #endif
 
 	if (type == MovementValueType::ScreenPos) {
