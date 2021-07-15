@@ -90,10 +90,10 @@ int main()
 	// Spawn lone SDL2 or WiiIo input thread.
 	// NOTE: There probably is no reason we can't have both of these running
 	//if (setup.sdlbackend) {
-		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, 0)).detach();
+		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, 0)).detach();
 	//}
 	//else {
-	//	std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(setup.players, &JVSHandler->Inputs)).detach();
+		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
 	//}
 
 	JvsIo::Status jvsStatus;

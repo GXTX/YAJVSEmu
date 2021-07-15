@@ -49,6 +49,10 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 
 	xwii_monitor_unref(mon);
 
+	// TODO: There is currently a bug in libxwiimote where Nyko controllers aren't able to get IR most of the time
+	// There seems to be a fix in polling for WATCH events & then 'refreshing' everything, I think it's fair to
+	// hang this thread until we have a solid IR connection so we need a loop to sit waiting for the watch and 'refreshing'
+	// until we have the connection.
 	for (i = 0; i < numberOfControllers; i++) {
 		ret = xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
 		if (ret) {
@@ -56,10 +60,11 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 				std::printf("%d", ret) << std::endl;
 		}
 		else {
-			ret = xwii_iface_open(controllers.interface[i], XWII_IFACE_CORE | XWII_IFACE_IR);
+			ret = xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
 			if (ret) {
-				std::printf("WiiIo::WiiIo: Cannot open interface: %d", ret);
-				std::cout << std::endl;
+				while (xwii_iface_open(controllers.interface[i], XWII_IFACE_IR)) {
+					std::puts("Trying to open IR interface...");
+				}
 			}
 			std::printf("WiiIo::WiiIo: Successfully connected %s.", XWII__NAME);
 			controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
@@ -134,28 +139,39 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key* button)
 
 void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type)
 {
+	int middlex;
+	int middley;
+
 	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]))  {
-		int middlex = (ir[0].x + ir[1].x) / 2;
-		int middley = (ir[0].y + ir[1].y) / 2;
+		middlex = (ir[0].x + ir[1].x) / 2;
+		middley = (ir[0].y + ir[1].y) / 2;
+	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) { // NOTE: There is a bug with libxwiimote where we will sometimes see 1 & 3 IR positions.
+		middlex = (ir[0].x + ir[2].x) / 2;
+		middley = (ir[0].y + ir[2].y) / 2;
+	} else {
+		return;
+	}
 
-		float valuex = middlex;
-		float valuey = middley - 1023;
+	float valuex = middlex - 1023;
+	float valuey = middley;
 
-		uint16_t finalx = (valuex / 1023.0) * 0xFFFF;
-		uint16_t finaly = std::fabs((valuey / 1023.0) * 0xFFFF);
+	uint16_t finalx = std::fabs(valuex / 1023) * 0xFFFF;
+	uint16_t finaly = std::fabs(valuey / 1023) * 0xFFFF;
 
-		if (type == MovementValueType::ScreenPos) {
-			Inputs->screen[0].position = (finalx << 16);
-			Inputs->screen[0].position |= finaly;
-		}
-		else {
-			switch (player) {
-				case 0: Inputs->analog[0].value = finalx; Inputs->analog[1].value = finaly; break;
-				case 1: Inputs->analog[2].value = finalx; Inputs->analog[3].value = finaly; break;
-				case 2: Inputs->analog[4].value = finalx; Inputs->analog[5].value = finaly; break;
-				case 3: Inputs->analog[6].value = finalx; Inputs->analog[7].value = finaly; break;
-				default: break;
-			}
+#ifdef DEBUG_IR_POS
+	std::cout << std::printf("POS: %d/%d", finalx, finaly) << std::endl;
+#endif
+
+	if (type == MovementValueType::ScreenPos) {
+		Inputs->screen[0].position = (finalx << 16) | finaly;
+	}
+	else {
+		switch (player) {
+			case 0: Inputs->analog[0].value = finalx; Inputs->analog[1].value = finaly; break;
+			case 1: Inputs->analog[2].value = finalx; Inputs->analog[3].value = finaly; break;
+			case 2: Inputs->analog[4].value = finalx; Inputs->analog[5].value = finaly; break;
+			case 3: Inputs->analog[6].value = finalx; Inputs->analog[7].value = finaly; break;
+			default: break;
 		}
 	}
 }
