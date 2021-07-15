@@ -25,6 +25,8 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 #include <unistd.h>
 #include <poll.h>
@@ -57,7 +59,7 @@ private:
 	int numberOfPlayers;
 	struct xwii_event event;
 
-	void ButtonPressHandler(int player, xwii_event_key* button);
+	void ButtonPressHandler(int player, xwii_event_key* button, xwii_iface *fd);
 	void IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type);
 };
 

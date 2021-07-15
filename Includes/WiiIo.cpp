@@ -56,13 +56,15 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 		while (true) {
 			std::puts("WiiIo::WiiIo: Connecting Wii Remote...");
 			xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
-			xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL);
-			if (xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_IR) {
+			xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
+			if (xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_IR && 
+					xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_CORE) {
 				controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
 				std::puts("WiiIo::WiiIo: Successfully connected Wii Remote.");
 				break;
 			}
 			xwii_iface_unref(controllers.interface[i]);
+			std::this_thread::sleep_for(std::chrono::milliseconds(75));
 		}
 	}
 }
@@ -102,7 +104,7 @@ void WiiIo::Loop()
 				}
 			} else {
 				switch (event.type) {
-					case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key); break;
+					case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key, controllers.interface[i]); break;
 					case XWII_EVENT_IR: IRMovementHandler(i, event.v.abs, MovementValueType::Analog); break;
 					default: break;
 				}
@@ -111,11 +113,17 @@ void WiiIo::Loop()
 	}
 }
 
-void WiiIo::ButtonPressHandler(int player, xwii_event_key* button)
+void WiiIo::ButtonPressHandler(int player, xwii_event_key* button, xwii_iface *fd)
 {
 	switch (button->code) {
-		case XWII_KEY_A: Inputs->switches.player[player].button[1] = button->state; break;
-		case XWII_KEY_B: Inputs->switches.player[player].button[0] = button->state; break;
+		case XWII_KEY_A: 
+			Inputs->switches.player[player].button[1] = button->state;
+			xwii_iface_rumble(fd, button->state);
+		break;
+		case XWII_KEY_B: 
+			Inputs->switches.player[player].button[0] = button->state;
+			xwii_iface_rumble(fd, button->state);
+		break;
 		case XWII_KEY_ONE: Inputs->switches.player[player].button[2] = button->state; break;
 		case XWII_KEY_TWO: Inputs->switches.player[player].button[3] = button->state; break;
 		case XWII_KEY_MINUS: Inputs->switches.system.test = button->state; break;
@@ -144,8 +152,11 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType 
 		return;
 	}
 
-	uint16_t finalx = std::fabs((middlex - 1023) / 1023) * 0xFFFF;
-	uint16_t finaly = std::fabs(middley / 1023) * 0xFFFF;
+	float valuex = middlex - 1023;
+	float valuey = middley;
+
+	uint16_t finalx = std::fabs(valuex / 1023) * 0xFFFF;
+	uint16_t finaly = std::fabs(valuey / 1023) * 0xFFFF;
 
 #ifdef DEBUG_IR_POS
 	std::printf("POS: %04x/%04x\n", finalx, finaly);
