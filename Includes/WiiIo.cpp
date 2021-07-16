@@ -78,42 +78,34 @@ WiiIo::~WiiIo()
 
 void WiiIo::Loop()
 {
-	int ret = 0;
-	std::vector<struct pollfd> fd;
+	std::vector<pollfd> fd;
 
 	for (int i = 0; i < numberOfPlayers; i++) {
 		fd.push_back({controllers.fd[i], POLLIN, 0});
 	}
 
 	while (true) {
-		ret = poll(fd.data(), fd.size(), -1);
-		if (ret < 0) {
-			if (errno != EINTR) {
-				ret = -errno;
-				std::printf("WiiIo::Loop: Cannot poll fds: %d", ret);
-				break;
-			}
+		int fdret = poll(fd.data(), fd.size(), -1);
+		if (fdret < 0) {
+			std::puts("WiiIo::Loop: Can't poll the fd!");
+			break;
 		}
 
-		for (size_t i = 0; i < fd.size(); i++) {
-			ret = xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event));
-			if (ret) {
-				if (ret != -EAGAIN) {
-					std::printf("WiiIo::Loop: Read failed with error : %d", ret);
-					break;
-				}
-			} else {
-				switch (event.type) {
-					case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key, controllers.interface[i]); break;
-					case XWII_EVENT_IR: IRMovementHandler(i, event.v.abs, MovementValueType::Analog); break;
-					default: break;
-				}
+		for (int i = 0; i < numberOfPlayers; i++) {
+			if (xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event))) {
+				std::puts("WiiIo::Loop: Failed to read fd queue.");
+				break;
+			}
+			switch (event.type) {
+				case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key, controllers.interface[i]); break;
+				case XWII_EVENT_IR: IRMovementHandler(i, event.v.abs, MovementValueType::Analog); break;
+				default: break;
 			}
 		}
 	}
 }
 
-void WiiIo::ButtonPressHandler(int player, xwii_event_key* button, xwii_iface *fd)
+void WiiIo::ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *fd)
 {
 	switch (button->code) {
 		case XWII_KEY_A: 
@@ -137,15 +129,18 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key* button, xwii_iface *f
 	}
 }
 
-void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type)
+void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType type)
 {
 	int middlex;
 	int middley;
 
-	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]))  {
+	// NOTE: Due to bugs with libxwiimote we can sometimes present as a valid 1 & 2
+	// but report as X:0 & Y:0, where we would actually want to read from 1 & 3.
+	// This generally only happens with 3rd party Nyko controllers.
+	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]) && ir[1].x != 0 && ir[1].y != 0 ) {
 		middlex = (ir[0].x + ir[1].x) / 2;
 		middley = (ir[0].y + ir[1].y) / 2;
-	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) { // NOTE: Bug with libxwiimote where we see 1 & 3 IR positions.
+	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) {
 		middlex = (ir[0].x + ir[2].x) / 2;
 		middley = (ir[0].y + ir[2].y) / 2;
 	} else {
@@ -164,8 +159,7 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType 
 
 	if (type == MovementValueType::ScreenPos) {
 		Inputs->screen[0].position = (finalx << 16) | finaly;
-	}
-	else {
+	} else {
 		switch (player) {
 			case 0: Inputs->analog[0].value = finalx; Inputs->analog[1].value = finaly; break;
 			case 1: Inputs->analog[2].value = finalx; Inputs->analog[3].value = finaly; break;

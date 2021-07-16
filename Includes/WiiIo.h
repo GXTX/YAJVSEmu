@@ -37,9 +37,9 @@
 
 // TODO: vector?
 typedef struct {
-	std::string controller[2];
-	struct xwii_iface *interface[2];
-	int fd[2];
+	int fd[4];
+	std::string controller[4];
+	xwii_iface *interface[4];
 } wiimotes;
 
 class WiiIo
@@ -57,10 +57,10 @@ private:
 	jvs_input_states_t *Inputs;
 	wiimotes controllers;
 	int numberOfPlayers;
-	struct xwii_event event;
+	xwii_event event;
 
-	void ButtonPressHandler(int player, xwii_event_key* button, xwii_iface *fd);
-	void IRMovementHandler(int player, xwii_event_abs* ir, MovementValueType type);
+	void ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *fd);
+	void IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType type);
 };
 
 #endif
