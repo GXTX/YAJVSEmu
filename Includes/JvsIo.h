@@ -133,8 +133,15 @@ typedef struct {
 } jvs_analog_input_t;
 
 typedef struct {
+	enum CoinStatus{
+		Normal = 0,
+		Jammed = 1,
+		Disconnected = 2,
+		Busy = 3,
+	};
+
 	uint16_t coins = 0;
-	uint8_t status = 2;
+	uint8_t status = CoinStatus::Normal;
 
 	uint8_t GetByte0() {
 		uint8_t value = 0;

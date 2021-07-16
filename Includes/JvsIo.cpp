@@ -339,7 +339,7 @@ int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
 	uint16_t increment = (data[2] << 8) | data[3];
 	uint32_t total = Inputs.coins[data[1]].coins + increment;
 
-	if (total <= UINT16_MAX) {
+	if (total <= 0xFFFF) {
 		Inputs.coins[slot].coins += increment;
 	}
 	else {
@@ -365,7 +365,7 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			case 0xF1: i += Jvs_Command_F1_SetDeviceId(command_data); break;
 			// Init Commands
 			case 0x10: i += Jvs_Command_10_GetBoardId(); break;
-			case 0x11: i += Jvs_Command_11_GetCommandFormat();	break;
+			case 0x11: i += Jvs_Command_11_GetCommandFormat(); break;
 			case 0x12: i += Jvs_Command_12_GetJvsRevision(); break;
 			case 0x13: i += Jvs_Command_13_GetCommunicationVersion(); break;
 			case 0x14: i += Jvs_Command_14_GetCapabilities(); break;

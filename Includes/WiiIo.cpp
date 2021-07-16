@@ -92,7 +92,8 @@ void WiiIo::Loop()
 		}
 
 		for (int i = 0; i < numberOfPlayers; i++) {
-			if (xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event))) {
+			int wiiret = xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event));
+			if (wiiret < 0 && wiiret != -EAGAIN) {
 				std::puts("WiiIo::Loop: Failed to read fd queue.");
 				break;
 			}
@@ -123,8 +124,10 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *f
 		case XWII_KEY_PLUS: Inputs->switches.player[player].start = button->state; break;
 		case XWII_KEY_UP: Inputs->switches.player[player].up = button->state; break;
 		case XWII_KEY_DOWN: Inputs->switches.player[player].down = button->state; break;
-		case XWII_KEY_LEFT: Inputs->switches.player[player].left = button->state; break;
-		case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;
+		//case XWII_KEY_LEFT: Inputs->switches.player[player].left = button->state; break;
+		//case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;
+		case XWII_KEY_LEFT: Inputs->coins[player - 1].coins++; break;
+		case XWII_KEY_RIGHT: Inputs->coins[player - 1].coins++; break;
 		default: break;
 	}
 }
