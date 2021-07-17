@@ -124,10 +124,8 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *f
 		case XWII_KEY_PLUS: Inputs->switches.player[player].start = button->state; break;
 		case XWII_KEY_UP: Inputs->switches.player[player].up = button->state; break;
 		case XWII_KEY_DOWN: Inputs->switches.player[player].down = button->state; break;
-		//case XWII_KEY_LEFT: Inputs->switches.player[player].left = button->state; break;
-		//case XWII_KEY_RIGHT: Inputs->switches.player[player].right = button->state; break;
-		case XWII_KEY_LEFT: Inputs->coins[player - 1].coins++; break;
-		case XWII_KEY_RIGHT: Inputs->coins[player - 1].coins++; break;
+		case XWII_KEY_LEFT: Inputs->coins[player].coins++; break;
+		case XWII_KEY_RIGHT: Inputs->coins[player].coins--; break;
 		default: break;
 	}
 }
