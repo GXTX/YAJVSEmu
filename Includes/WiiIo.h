@@ -35,12 +35,12 @@
 
 #include "JvsIo.h"
 
-// TODO: vector?
 typedef struct {
-	int fd[4];
-	std::string controller[4];
-	xwii_iface *interface[4];
-} wiimotes;
+	int id;
+	int fd;
+	std::string controller;
+	xwii_iface *interface;
+} wiiremote;
 
 class WiiIo
 {
@@ -55,8 +55,7 @@ private:
 	};
 
 	jvs_input_states_t *Inputs;
-	wiimotes controllers;
-	int numberOfPlayers;
+	std::vector<wiiremote> Player;
 	xwii_event event;
 
 	void ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *fd);

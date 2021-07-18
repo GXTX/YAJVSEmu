@@ -26,62 +26,56 @@
 WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 {
 	Inputs = jvs_inputs;
-	struct xwii_monitor *mon;
-	int numberOfControllers = 0;
-	int i = 0;
 
-	numberOfPlayers = players;
+	Player.resize(players);
 
 	// Start scan looking for Wii Remotes
-	mon = xwii_monitor_new(false, false);
-	if (!mon) {
+	xwii_monitor *mon = xwii_monitor_new(false, true);
+	if (!mon)
 		std::puts("WiiIo::WiiIo: Unable to create monitor.");
-	}
 
-	while (true) {
-		if(i == numberOfPlayers) {
+	for (int i = 0; i < players; i++) {
+		Player.at(i).id = i;
+		Player.at(i).controller = xwii_monitor_poll(mon);
+		if (Player.at(i).controller.empty()) {
+			std::puts("Not good! We need to kill the thread here instead of continuing.");
 			break;
 		}
-		controllers.controller[i] = xwii_monitor_poll(mon);
-		std::printf("WiiIo::WiiIo: Found device #%d: %s\n", ++numberOfControllers, controllers.controller[i].c_str());
-		i++;
+		std::printf("WiiIo::WiiIo: Found device #%d: %s\n", i, Player.at(i).controller.c_str());
 	}
-
 	xwii_monitor_unref(mon);
 
 	// NOTE: There is a bug with xwiimote where Nyko controllers wont always enable their IR interface,
 	// so we need to make sure this is opened. It's possible to stall the thread and attempt to connect
 	// forever but it's *obviously* imporant that we have access to IR.
-	for (int i = 0; i < numberOfControllers; i++) {
+	for (wiiremote &remote : Player) {
 		while (true) {
-			std::puts("WiiIo::WiiIo: Connecting Wii Remote...");
-			xwii_iface_new(&controllers.interface[i], controllers.controller[i].c_str());
-			xwii_iface_open(controllers.interface[i], XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
-			if (xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_IR && 
-					xwii_iface_opened(controllers.interface[i]) & XWII_IFACE_CORE) {
-				controllers.fd[i] = xwii_iface_get_fd(controllers.interface[i]);
+			std::puts("WiiIo::WiiIo:: Connecting Wii Remote...");
+			xwii_iface_new(&remote.interface, remote.controller.c_str());
+			xwii_iface_open(remote.interface, XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
+			if (xwii_iface_opened(remote.interface) & XWII_IFACE_CORE && xwii_iface_opened(remote.interface) & XWII_IFACE_IR) {
+				remote.fd = xwii_iface_get_fd(remote.interface);
 				std::puts("WiiIo::WiiIo: Successfully connected Wii Remote.");
 				break;
 			}
-			xwii_iface_unref(controllers.interface[i]);
-			std::this_thread::sleep_for(std::chrono::milliseconds(75));
+			xwii_iface_unref(remote.interface);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
 }
 
 WiiIo::~WiiIo()
 {
-	for (int i = 0; i < numberOfPlayers; i++) {
-		xwii_iface_unref(controllers.interface[i]);
+	for (wiiremote &remote : Player) {
+		xwii_iface_unref(remote.interface);
 	}
 }
 
 void WiiIo::Loop()
 {
 	std::vector<pollfd> fd;
-
-	for (int i = 0; i < numberOfPlayers; i++) {
-		fd.push_back({controllers.fd[i], POLLIN, 0});
+	for (wiiremote remote : Player) {
+		fd.push_back({remote.fd, POLLIN, 0});
 	}
 
 	while (true) {
@@ -90,16 +84,15 @@ void WiiIo::Loop()
 			std::puts("WiiIo::Loop: Can't poll the fd!");
 			break;
 		}
-
-		for (int i = 0; i < numberOfPlayers; i++) {
-			int wiiret = xwii_iface_dispatch(controllers.interface[i], &event, sizeof(event));
+		for (wiiremote &remote : Player) {
+			int wiiret = xwii_iface_dispatch(remote.interface, &event, sizeof(event));
 			if (wiiret < 0 && wiiret != -EAGAIN) {
 				std::puts("WiiIo::Loop: Failed to read fd queue.");
-				break;
+				continue;
 			}
 			switch (event.type) {
-				case XWII_EVENT_KEY: ButtonPressHandler(i, &event.v.key, controllers.interface[i]); break;
-				case XWII_EVENT_IR: IRMovementHandler(i, event.v.abs, MovementValueType::Analog); break;
+				case XWII_EVENT_KEY: ButtonPressHandler(remote.id, &event.v.key, remote.interface); break;
+				case XWII_EVENT_IR: IRMovementHandler(remote.id, event.v.abs, MovementValueType::Analog); break;
 				default: break;
 			}
 		}
