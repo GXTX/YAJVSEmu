@@ -92,7 +92,7 @@ int main()
 		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, 0)).detach();
 	//}
 	//else {
-		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
+		//std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
 	//}
 
 	JvsIo::Status jvsStatus;

@@ -50,11 +50,18 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 {
 	uint8_t ensure_reset = data[1];
 
+#ifdef DEBUG_JVS_PACKETS
+	if (ensure_reset != 0xD9) {
+		std::puts("Reset with no D9?");
+	} else {
+		std::puts("Reset.");
+	}
+#endif
+
 	if (ensure_reset == 0xD9) {
-		// Set sense to 3 (2.5v) to instruct the baseboard we're ready.
-		pSense = SenseStates::NotConnected;
+		pSense = SenseStates::NotConnected; // Set sense to 3 (2.5v) to instruct the baseboard we're ready.
 		pSenseChange = true;
-		ResponseBuffer.push_back(JvsReportCode::Handled); // Note : Without this, Chihiro software stops sending packets (but JVS V3 doesn't send this?)
+		//ResponseBuffer.push_back(JvsReportCode::Handled);
 		DeviceId = 0;
 	}
 	return 1;
