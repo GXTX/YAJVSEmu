@@ -23,6 +23,7 @@
 #define GPIO_H
 
 #include <iostream>
+
 #include <bcm2835.h>
 
 #define PIN RPI_BPLUS_GPIO_J8_32
