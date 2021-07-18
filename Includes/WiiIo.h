@@ -47,6 +47,7 @@ class WiiIo
 public:
 	WiiIo(int players, jvs_input_states_t *jvs_inputs);
 	~WiiIo();
+
 	void Loop();
 private:
 	enum MovementValueType {

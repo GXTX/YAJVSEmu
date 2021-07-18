@@ -50,6 +50,7 @@ public:
 
 	GpIo(SenseType sense_type);
 	~GpIo();
+
 	void SetMode(PinMode state);
 	void Write(PinState state);
 private:

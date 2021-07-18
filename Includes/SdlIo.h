@@ -37,6 +37,7 @@ public:
 
 	SdlIo(jvs_input_states_t *jvs_inputs, int device_index);
 	~SdlIo();
+
 	void Loop();
 private:
 	enum AxisType {

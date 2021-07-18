@@ -204,10 +204,10 @@ public:
 	jvs_input_states_t Inputs;
 
 	JvsIo(SenseStates sense);
+
 	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer);
 	JvsIo::Status ReceivePacket(std::vector<uint8_t> &buffer);
 	uint8_t GetDeviceId();
-
 private:
 	const uint8_t SYNC_BYTE = 0xE0;
 	const uint8_t ESCAPE_BYTE = 0xD0;

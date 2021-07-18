@@ -63,8 +63,7 @@ int main()
 #ifdef REAL_TIME
 	// Set thread priority to RT. We don't care if this
 	// fails but may be required for some systems.
-	struct sched_param params;
-	params.sched_priority = sched_get_priority_max(SCHED_FIFO);
+	sched_param params = {sched_get_priority_max(SCHED_FIFO)};
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
 #endif
 

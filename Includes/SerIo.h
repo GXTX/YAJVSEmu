@@ -48,8 +48,8 @@ public:
 private:
 	int SerialHandler;
 
-	struct sp_port *Port;
-	struct sp_port_config *PortConfig;
+	sp_port *Port;
+	sp_port_config *PortConfig;
 };
 
 #endif

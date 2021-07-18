@@ -151,9 +151,7 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 	std::printf("POS: %04x/%04x\n", finalx, finaly);
 #endif
 
-	if (type == MovementValueType::ScreenPos) {
-		Inputs->screen[0].position = (finalx << 16) | finaly;
-	} else {
+	if (type == MovementValueType::Analog) {
 		switch (player) {
 			case 0: Inputs->analog[0].value = finalx; Inputs->analog[1].value = finaly; break;
 			case 1: Inputs->analog[2].value = finalx; Inputs->analog[3].value = finaly; break;
@@ -161,5 +159,7 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 			case 3: Inputs->analog[6].value = finalx; Inputs->analog[7].value = finaly; break;
 			default: break;
 		}
+	} else {
+		Inputs->screen[0].position = (finalx << 16) | finaly;
 	}
 }
