@@ -48,7 +48,7 @@ void sig_handle(int sig) {
 }
 
 // TODO: Replace with ini setup
-static char *dev = "/dev/ttyUSB0";
+static const std::string dev = "/dev/ttyUSB0";
 
 int main()
 {
@@ -80,7 +80,7 @@ int main()
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
 	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseStates::NotConnected));
 
-	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev));
+	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev.c_str()));
 	if (!SerialHandler->IsInitialized) {
 		std::cerr << "Coudln't initiate the serial controller.\n";
 		return 1;
@@ -89,7 +89,7 @@ int main()
 	// Spawn lone SDL2 or WiiIo input thread.
 	// NOTE: There probably is no reason we can't have both of these running
 	//if (setup.sdlbackend) {
-		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(&JVSHandler->Inputs, 0)).detach();
+		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(0, &JVSHandler->Inputs)).detach();
 	//}
 	//else {
 		//std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
@@ -128,8 +128,6 @@ int main()
 			JVSHandler->pSenseChange = false;
 		}
 
-		// NOTE: This is a workaround for Crazy Taxi - High Roller on Chihiro
-		// Without this the Chihiro will crash (likely) or stop sending packets to us (less likely).
 		std::this_thread::sleep_for(delay);
 	}
 

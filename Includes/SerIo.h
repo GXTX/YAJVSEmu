@@ -40,7 +40,7 @@ public:
 
 	bool IsInitialized;
 
-	SerIo(char *devicePath);
+	SerIo(const char *devicePath);
 	~SerIo();
 
 	SerIo::Status Read(std::vector<uint8_t> *buffer);

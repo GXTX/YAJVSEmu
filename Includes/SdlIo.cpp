@@ -21,11 +21,13 @@
 
 #include "SdlIo.h"
 
-SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
+SdlIo::SdlIo(int deviceIndex, jvs_input_states_t *jvsInputs)
 {
-	Inputs = jvs_inputs;
+	Inputs = jvsInputs;
+
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+
 	// For additional mappings use https://github.com/gabomdq/SDL_GameControllerDB
 	// Or use custom ones you generate yourself using SDL2's test app or
 	// 3rd party applications such as http://www.generalarcade.com/gamepadtool/
@@ -35,19 +37,17 @@ SdlIo::SdlIo(jvs_input_states_t *jvs_inputs, int device_index)
 		SDL_GameControllerAddMappingsFromFile(map_file.c_str());
 	}
 
-	sgc = SDL_GameControllerOpen(device_index);
-
-	if (sgc == nullptr) {
-		std::cerr << "SdlIo::SdlIo: " << SDL_GetError() << std::endl;
-	}
-	else {
-		std::cout << "SdlIo::SdlIo: Connected " << SDL_JoystickNameForIndex(device_index) << std::endl;
+	controller = SDL_GameControllerOpen(deviceIndex);
+	if (controller == nullptr) {
+		std::cerr << "SdlIo::SdlIo: " << SDL_GetError();
+	} else {
+		std::cout << "SdlIo::SdlIo: Connected " << SDL_JoystickNameForIndex(deviceIndex) << std::endl;
 	}
 }
 
 SdlIo::~SdlIo()
 {
-	SDL_GameControllerClose(sgc);
+	SDL_GameControllerClose(controller);
 }
 
 void SdlIo::Loop()
@@ -55,19 +55,15 @@ void SdlIo::Loop()
 	while (true) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
+				case SDL_CONTROLLERAXISMOTION: AxisMovementHandler(&event.caxis); break;
 				case SDL_CONTROLLERBUTTONDOWN:
 				case SDL_CONTROLLERBUTTONUP:
 					ButtonPressHandler(&event.cbutton);
-					break;
-				case SDL_CONTROLLERAXISMOTION:
-					AxisMovementHandler(&event.caxis);
-					break;
-				default:
-					break;
+				break;
+				default: break;
 			}
 		}
-		// TODO: required to stop using 100% of CPU, find lowest reasonable value
-		SDL_Delay(5);
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
 }
 
@@ -100,7 +96,7 @@ void SdlIo::AxisMovementHandler(SDL_ControllerAxisEvent *axis)
 {
 	switch (axis->axis) {
 		case SDL_CONTROLLER_AXIS_LEFTX: Inputs->analog[0].value = ScaledAxisMovement(axis->value, AxisType::Stick); break;
-		/*case SDL_CONTROLLER_AXIS_RIGHTX: break;*/
+		case SDL_CONTROLLER_AXIS_RIGHTX: Inputs->analog[3].value = ScaledAxisMovement(axis->value, AxisType::Stick); break;
 		case SDL_CONTROLLER_AXIS_TRIGGERLEFT: Inputs->analog[2].value = ScaledAxisMovement(axis->value, AxisType::Trigger); break;
 		case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: Inputs->analog[1].value = ScaledAxisMovement(axis->value, AxisType::Trigger); break;
 		default: break;
@@ -109,8 +105,8 @@ void SdlIo::AxisMovementHandler(SDL_ControllerAxisEvent *axis)
 
 uint16_t SdlIo::ScaledAxisMovement(int16_t value, AxisType type)
 {
-	float max = SDL_MAX_SINT16;
 	// NOTE: SDL2 limits trigger lower range to 0
+	float max = SDL_MAX_SINT16;
 	float min = (type == AxisType::Trigger ? 0 : SDL_MIN_SINT16);
 
 	float scaled_value = (value - min) / (max - min);

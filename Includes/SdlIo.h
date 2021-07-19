@@ -24,18 +24,17 @@
 
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 #include <SDL.h>
-#include <SDL_stdinc.h>
 
 #include "JvsIo.h"
 
 class SdlIo
 {
 public:
-	jvs_input_states_t *Inputs;
-
-	SdlIo(jvs_input_states_t *jvs_inputs, int device_index);
+	SdlIo(int deviceIndex, jvs_input_states_t *jvsInputs);
 	~SdlIo();
 
 	void Loop();
@@ -45,7 +44,8 @@ private:
 		Trigger,
 	};
 
-	SDL_GameController *sgc;
+	jvs_input_states_t *Inputs;
+	SDL_GameController *controller;
 	SDL_Event event;
 
 	void ButtonPressHandler(SDL_ControllerButtonEvent *button);

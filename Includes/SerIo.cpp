@@ -23,7 +23,7 @@
 
 //#define DEBUG_SERIAL
 
-SerIo::SerIo(char *devicePath)
+SerIo::SerIo(const char *devicePath)
 {
 	sp_new_config(&PortConfig);
 	sp_set_config_baudrate(PortConfig, 115200);

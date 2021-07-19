@@ -23,9 +23,9 @@
 
 //#define DEBUG_IR_POS
 
-WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
+WiiIo::WiiIo(int players, jvs_input_states_t *jvsInputs)
 {
-	Inputs = jvs_inputs;
+	Inputs = jvsInputs;
 
 	Player.resize(players);
 
@@ -34,6 +34,7 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvs_inputs)
 	if (!mon)
 		std::puts("WiiIo::WiiIo: Unable to create monitor.");
 
+	// FIXME: If there's multiple 'players' but less controllers then we crash.
 	for (int i = 0; i < players; i++) {
 		Player.at(i).id = i;
 		Player.at(i).controller = xwii_monitor_poll(mon);

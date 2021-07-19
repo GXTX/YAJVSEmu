@@ -45,7 +45,7 @@ typedef struct {
 class WiiIo
 {
 public:
-	WiiIo(int players, jvs_input_states_t *jvs_inputs);
+	WiiIo(int players, jvs_input_states_t *jvsInputs);
 	~WiiIo();
 
 	void Loop();

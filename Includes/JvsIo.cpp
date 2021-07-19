@@ -50,16 +50,8 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 {
 	uint8_t ensure_reset = data[1];
 
-#ifdef DEBUG_JVS_PACKETS
-	if (ensure_reset != 0xD9) {
-		std::puts("Reset with no D9?");
-	} else {
-		std::puts("Reset.");
-	}
-#endif
-
 	if (ensure_reset == 0xD9) {
-		pSense = SenseStates::NotConnected; // Set sense to 3 (2.5v) to instruct the baseboard we're ready.
+		pSense = SenseStates::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
 		pSenseChange = true;
 		//ResponseBuffer.push_back(JvsReportCode::Handled);
 		DeviceId = 0;
@@ -72,7 +64,7 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 	// Set Address
 	DeviceId = data[1];
 
-	pSense = SenseStates::Connected; // Set sense to 0v
+	pSense = SenseStates::Connected; // Set sense to 0v.
 	pSenseChange = true;
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
@@ -165,23 +157,22 @@ int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-	std::string main_board_id;
+	std::string masterId;
 
-	// Ignore the command and addr bytes, break on null terminator
-	for (int i = 2; i < (uint8_t)sizeof(data); i++) {
-		if (data[i] == 0x00) {
+	// Skip first 2 bytes, max size is 100, break on null.
+	for (int i = 0; i < 100; i++) {
+		if (data[i+2] == 0x00)
 			break;
-		}
-		main_board_id.push_back(data[i]);
+		masterId.push_back(data[i+2]);
 	}
 
 #ifdef DEBUG_CONVEY_ID
 	std::cout << "JvsIo::Jvs_Command_15_ConveyId: " <<
-		std::printf("%s", main_board_id.c_str()) <<
+		std::printf("%s", masterId.c_str()) <<
 		std::endl;
 #endif
 
-	return 2 + main_board_id.size();
+	return 2 + masterId.size();
 }
 
 int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
