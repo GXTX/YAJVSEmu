@@ -20,7 +20,7 @@
 */
 
 #ifndef WIIIO_H
-#define wIIIO_H
+#define WIIIO_H
 
 #include <iostream>
 #include <cmath>

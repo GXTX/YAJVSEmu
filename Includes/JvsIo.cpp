@@ -73,12 +73,8 @@ uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_10_GetBoardId()
 {
-	// Get Board ID
 	ResponseBuffer.push_back(JvsReportCode::Handled);
-
-	for (char& c : BoardID) {
-		ResponseBuffer.push_back(c);
-	}
+	std::copy(BoardID.begin(), BoardID.end(), std::back_inserter(ResponseBuffer));
 
 	return 0;
 }
@@ -301,8 +297,7 @@ uint8_t JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t *data)
 
 	if (Inputs.coins[slot].coins >= decrement) {
 		Inputs.coins[slot].coins -= decrement;
-	}
-	else {
+	} else {
 		Inputs.coins[slot].coins = 0;
 	}
 
@@ -337,11 +332,10 @@ uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 	uint16_t increment = (data[2] << 8) | data[3];
 	uint32_t total = Inputs.coins[data[1]].coins + increment;
 
-	if (total <= 0xFFFF) {
+	if (total <= 0x3FFF) {
 		Inputs.coins[slot].coins += increment;
-	}
-	else {
-		Inputs.coins[slot].coins = 0xFFFF;
+	} else {
+		Inputs.coins[slot].coins = 0x3FFF;
 	}
 
 	return 3;

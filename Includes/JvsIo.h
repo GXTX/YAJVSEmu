@@ -200,7 +200,7 @@ public:
 	};
 
 	SenseStates pSense = SenseStates::NotConnected;
-	bool pSenseChange;
+	bool pSenseChange = false;
 	jvs_input_states_t Inputs;
 
 	JvsIo(SenseStates sense);
@@ -274,7 +274,7 @@ private:
 	uint8_t Jvs_Command_32_GeneralPurposeOutput(uint8_t *data);
 	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
 
-	bool BroadcastPacket;					// Set when the last command was a broadcast
+	bool BroadcastPacket = false;			// Set when the last command was a broadcast
 	uint8_t DeviceId = 0;					// Device ID assigned by running title
 	std::vector<uint8_t> ResponseBuffer;	// Command Response
 
