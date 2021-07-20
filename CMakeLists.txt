@@ -39,6 +39,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 17
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -march=native -Wall -Wextra -Wpedantic)
+target_compile_options(${PROJECT_NAME} PRIVATE -march=native -Wsign-conversion -Wall -Wextra -Wpedantic)
 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${SDL2_LIBRARIES} ${SERIAL_LIBRARIES} ${XWII_LIBRARIES} bcm2835)

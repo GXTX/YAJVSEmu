@@ -46,7 +46,7 @@ uint8_t JvsIo::GetDeviceId()
 	return BroadcastPacket ? 0x00 : DeviceId;
 }
 
-int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 {
 	uint8_t ensure_reset = data[1];
 
@@ -59,7 +59,7 @@ int JvsIo::Jvs_Command_F0_Reset(uint8_t* data)
 	return 1;
 }
 
-int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
 	// Set Address
 	DeviceId = data[1];
@@ -71,7 +71,7 @@ int JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t* data)
 	return 1;
 }
 
-int JvsIo::Jvs_Command_10_GetBoardId()
+uint8_t JvsIo::Jvs_Command_10_GetBoardId()
 {
 	// Get Board ID
 	ResponseBuffer.push_back(JvsReportCode::Handled);
@@ -83,7 +83,7 @@ int JvsIo::Jvs_Command_10_GetBoardId()
 	return 0;
 }
 
-int JvsIo::Jvs_Command_11_GetCommandFormat()
+uint8_t JvsIo::Jvs_Command_11_GetCommandFormat()
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(CommandFormatRevision);
@@ -91,7 +91,7 @@ int JvsIo::Jvs_Command_11_GetCommandFormat()
 	return 0;
 }
 
-int JvsIo::Jvs_Command_12_GetJvsRevision()
+uint8_t JvsIo::Jvs_Command_12_GetJvsRevision()
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(JvsVersion);
@@ -99,7 +99,7 @@ int JvsIo::Jvs_Command_12_GetJvsRevision()
 	return 0;
 }
 
-int JvsIo::Jvs_Command_13_GetCommunicationVersion()
+uint8_t JvsIo::Jvs_Command_13_GetCommunicationVersion()
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 	ResponseBuffer.push_back(CommunicationVersion);
@@ -107,7 +107,7 @@ int JvsIo::Jvs_Command_13_GetCommunicationVersion()
 	return 0;
 }
 
-int JvsIo::Jvs_Command_14_GetCapabilities()
+uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
@@ -153,7 +153,7 @@ int JvsIo::Jvs_Command_14_GetCapabilities()
 }
 
 // TODO: Verify with a test case...
-int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
@@ -175,7 +175,7 @@ int JvsIo::Jvs_Command_15_ConveyId(uint8_t* data)
 	return 2 + masterId.size();
 }
 
-int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 {
 	static jvs_switch_player_inputs_t default_switch_player_input;
 	uint8_t nr_switch_players = data[1];
@@ -200,7 +200,7 @@ int JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t* data)
 	return 2;
 }
 
-int JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 {
 	static jvs_coin_slots_t default_coin_slot;
 	uint8_t nr_coin_slots = data[1];
@@ -223,7 +223,7 @@ int JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t* data)
 	return 1;
 }
 
-int JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 {
 	static jvs_analog_input_t default_analog;
 	uint8_t nr_analog_inputs = data[1];
@@ -247,7 +247,7 @@ int JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t* data)
 }
 
 // TODO: Verify with a test case...
-int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 {
 	static jvs_screen_pos_input_t default_screen_pos;
 	uint8_t nr_screen_inputs = data[1];
@@ -273,7 +273,7 @@ int JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t* data)
 }
 
 // TODO: Verify with a test case...
-int JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 {
 	uint8_t bytesPerSwitchGeneralInput = data[1]; //?
 	jvs_switch_general_inputs_t &switch_general_input = Inputs.switches.general;
@@ -292,7 +292,7 @@ int JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data)
 	return 2;
 }
 
-int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t *data)
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
@@ -309,7 +309,7 @@ int JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t* data)
 	return 3;
 }
 
-int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t *data)
 {
 	uint8_t banks = data[1];
 
@@ -329,7 +329,7 @@ int JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t* data)
 	return 1 + banks;
 }
 
-int JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t* data)
+uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 {
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
@@ -356,7 +356,7 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 
 		BroadcastPacket = packet.at(i) >= 0xF0; // Set a flag when broadcast packet
 
-		uint8_t* command_data = &packet.at(i);
+		uint8_t *command_data = &packet.at(i);
 		switch (packet.at(i)) {
 			// Broadcast Commands
 			case 0xF0: i += Jvs_Command_F0_Reset(command_data); break;

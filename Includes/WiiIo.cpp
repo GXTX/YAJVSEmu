@@ -23,7 +23,7 @@
 
 //#define DEBUG_IR_POS
 
-WiiIo::WiiIo(int players, jvs_input_states_t *jvsInputs)
+WiiIo::WiiIo(uint8_t players, jvs_input_states_t *jvsInputs)
 {
 	Inputs = jvsInputs;
 
@@ -35,14 +35,14 @@ WiiIo::WiiIo(int players, jvs_input_states_t *jvsInputs)
 		std::puts("WiiIo::WiiIo: Unable to create monitor.");
 
 	// FIXME: If there's multiple 'players' but less controllers then we crash.
-	for (int i = 0; i < players; i++) {
-		Player.at(i).id = i;
-		Player.at(i).controller = xwii_monitor_poll(mon);
-		if (Player.at(i).controller.empty()) {
+	for (uint8_t i = 0; i != players; i++) {
+		Player[i].id = i;
+		Player[i].controller = xwii_monitor_poll(mon);
+		if (Player[i].controller.empty()) {
 			std::puts("Not good! We need to kill the thread here instead of continuing.");
 			break;
 		}
-		std::printf("WiiIo::WiiIo: Found device #%d: %s\n", i, Player.at(i).controller.c_str());
+		std::printf("WiiIo::WiiIo: Found device #%d: %s\n", i, Player[i].controller.c_str());
 	}
 	xwii_monitor_unref(mon);
 
@@ -161,6 +161,7 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 			default: break;
 		}
 	} else {
-		Inputs->screen[0].position = (finalx << 16) | finaly;
+		Inputs->screen[player].position = finalx << 16;
+		Inputs->screen[player].position |= finaly;
 	}
 }

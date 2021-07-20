@@ -257,25 +257,24 @@ private:
 
 	// Commands
 	// These return the additional param bytes used
-	int Jvs_Command_F0_Reset(uint8_t* data);
-	int Jvs_Command_F1_SetDeviceId(uint8_t* data);
-	int Jvs_Command_10_GetBoardId();
-	int Jvs_Command_11_GetCommandFormat();
-	int Jvs_Command_12_GetJvsRevision();
-	int Jvs_Command_13_GetCommunicationVersion();
-	int Jvs_Command_14_GetCapabilities();
-	int Jvs_Command_15_ConveyId(uint8_t* data);
-	int Jvs_Command_20_ReadSwitchInputs(uint8_t* data);
-	int Jvs_Command_21_ReadCoinInputs(uint8_t* data);
-	int Jvs_Command_22_ReadAnalogInputs(uint8_t* data);
-	int Jvs_Command_25_ReadScreenPosition(uint8_t* data);
-	int Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t* data);
-	int Jvs_Command_30_CoinSubtractionOutput(uint8_t* data);
-	int Jvs_Command_32_GeneralPurposeOutput(uint8_t* data);
-	int Jvs_Command_35_CoinAdditionOutput(uint8_t* data);
+	uint8_t Jvs_Command_F0_Reset(uint8_t *data);
+	uint8_t Jvs_Command_F1_SetDeviceId(uint8_t *data);
+	uint8_t Jvs_Command_10_GetBoardId();
+	uint8_t Jvs_Command_11_GetCommandFormat();
+	uint8_t Jvs_Command_12_GetJvsRevision();
+	uint8_t Jvs_Command_13_GetCommunicationVersion();
+	uint8_t Jvs_Command_14_GetCapabilities();
+	uint8_t Jvs_Command_15_ConveyId(uint8_t *data);
+	uint8_t Jvs_Command_20_ReadSwitchInputs(uint8_t *data);
+	uint8_t Jvs_Command_21_ReadCoinInputs(uint8_t *data);
+	uint8_t Jvs_Command_22_ReadAnalogInputs(uint8_t *data);
+	uint8_t Jvs_Command_25_ReadScreenPosition(uint8_t *data);
+	uint8_t Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data);
+	uint8_t Jvs_Command_30_CoinSubtractionOutput(uint8_t *data);
+	uint8_t Jvs_Command_32_GeneralPurposeOutput(uint8_t *data);
+	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
 
 	bool BroadcastPacket;					// Set when the last command was a broadcast
-	//uint8_t* pSense = nullptr;				// Pointer to Sense line
 	uint8_t DeviceId = 0;					// Device ID assigned by running title
 	std::vector<uint8_t> ResponseBuffer;	// Command Response
 

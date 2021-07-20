@@ -36,7 +36,7 @@
 #include "JvsIo.h"
 
 typedef struct {
-	int id;
+	uint8_t id;
 	int fd;
 	std::string controller;
 	xwii_iface *interface;
@@ -45,7 +45,7 @@ typedef struct {
 class WiiIo
 {
 public:
-	WiiIo(int players, jvs_input_states_t *jvsInputs);
+	WiiIo(uint8_t players, jvs_input_states_t *jvsInputs);
 	~WiiIo();
 
 	void Loop();
