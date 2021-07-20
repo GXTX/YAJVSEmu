@@ -34,8 +34,12 @@
 
 std::atomic<bool> running = true;
 
-// TODO: See if we can go lower
-auto delay = std::chrono::microseconds(100);
+// NOTE: Some systems and some situations (as a slave) require a longer delay.
+#ifdef LONG_DELAY
+auto delay = std::chrono::milliseconds(1);
+#else
+auto delay = std::chrono::microseconds(50);
+#endif
 
 void sig_handle(int sig) {
 	switch (sig) {
@@ -112,20 +116,20 @@ int main()
 		}
 
 		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
-		if (jvsStatus == JvsIo::Okay) {
-			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
-			SerialHandler->Write(&SerialBuffer);
-		}
 
 		if(JVSHandler->pSenseChange){
 			if(JVSHandler->pSense == JvsIo::NotConnected) {
 				GPIOHandler->SetMode(GpIo::In);
-			}
-			else {
+			} else {
 				GPIOHandler->SetMode(GpIo::Out);
 				GPIOHandler->Write(GpIo::Low);
 			}
 			JVSHandler->pSenseChange = false;
+		}
+
+		if (jvsStatus == JvsIo::Okay || jvsStatus == JvsIo::SumError) {
+			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
+			SerialHandler->Write(&SerialBuffer);
 		}
 
 		std::this_thread::sleep_for(delay);

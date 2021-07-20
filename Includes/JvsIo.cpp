@@ -62,11 +62,13 @@ uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
 	// Set Address
-	DeviceId = data[1];
+	if (DeviceId == 0) {
+		DeviceId = data[1];
 
-	pSense = SenseStates::Connected; // Set sense to 0v.
-	pSenseChange = true;
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+		pSense = SenseStates::Connected; // Set sense to 0v.
+		pSenseChange = true;
+		ResponseBuffer.push_back(JvsReportCode::Handled);
+	}
 
 	return 1;
 }
@@ -412,11 +414,13 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 		return SyncError;
 	}
 
-	// Read the target and count bytes
 	uint8_t target = GetEscapedByte(buffer);
-	uint8_t count = GetEscapedByte(buffer);
+	if (target != TARGET_BROADCAST && target != DeviceId) {
+		return WrongTarget;
+	}
 
-	// This can happen if we read too fast or we start *after* master already has a slave.
+	// Miscount can happen if we read too fast or we start *after* master already has a slave.
+	uint8_t count = GetEscapedByte(buffer);
 	if (count != buffer.size()) {
 #ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
@@ -430,7 +434,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Decode the payload data
 	// TODO: don't put in another vector just to send off
 	std::vector<uint8_t> packet;
-	for (int i = 0; i < count - 1; i++) { // Note : -1 to avoid adding the checksum byte to the packet
+	for (int i = 0; i < count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
 		packet.push_back(value);
 		actual_checksum += value;
@@ -443,13 +447,10 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
 		ResponseBuffer.push_back(JvsStatusCode::ChecksumError);
-		return SumError; // TODO: Master expects a response to this so we need to reply instead of just returning
-	} else {
-		// If the packet was intended for us, we need to handle it
-		if (target == TARGET_BROADCAST || target == DeviceId) {
-			HandlePacket(packet);
-		}
+		return SumError;
 	}
+
+	HandlePacket(packet);
 
 	return Okay;
 }

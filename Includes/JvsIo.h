@@ -190,6 +190,7 @@ public:
 		SyncError,
 		SumError,
 		CountError,
+		WrongTarget,
 		EmptyResponse,
 		ServerWaitingReply,
 	};
