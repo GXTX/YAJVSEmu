@@ -109,7 +109,7 @@ int main()
 			SerialBuffer.clear();
 		}
 
-		serialStatus = SerialHandler->Read(&SerialBuffer);
+		serialStatus = SerialHandler->Read(SerialBuffer);
 		if (serialStatus != SerIo::Okay) {
 			std::this_thread::sleep_for(delay);
 			continue;
@@ -129,7 +129,7 @@ int main()
 
 		if (jvsStatus == JvsIo::Okay || jvsStatus == JvsIo::SumError) {
 			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
-			SerialHandler->Write(&SerialBuffer);
+			SerialHandler->Write(SerialBuffer);
 		}
 
 		std::this_thread::sleep_for(delay);

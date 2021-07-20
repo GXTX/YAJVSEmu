@@ -356,7 +356,16 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 		switch (packet.at(i)) {
 			// Broadcast Commands
 			case 0xF0: i += Jvs_Command_F0_Reset(command_data); break;
-			case 0xF1: i += Jvs_Command_F1_SetDeviceId(command_data); break;
+			case 0xF1:
+				if (DeviceId != 0) {
+					// TODO: Refactor so we can just ignore things like this, for now
+					// clear out the buffer so we cause a check in JvsIo::SendPacket to
+					// fail so we don't send out a broken packet.
+					ResponseBuffer.clear();
+					return;
+				}
+				i += Jvs_Command_F1_SetDeviceId(command_data);
+			break;
 			// Init Commands
 			case 0x10: i += Jvs_Command_10_GetBoardId(); break;
 			case 0x11: i += Jvs_Command_11_GetCommandFormat(); break;
