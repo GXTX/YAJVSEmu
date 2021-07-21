@@ -51,7 +51,7 @@ WiiIo::WiiIo(uint8_t players, jvs_input_states_t *jvsInputs)
 	// forever but it's *obviously* imporant that we have access to IR.
 	for (wiiremote &remote : Player) {
 		while (true) {
-			std::puts("WiiIo::WiiIo:: Connecting Wii Remote...");
+			std::puts("WiiIo::WiiIo: Connecting Wii Remote...");
 			xwii_iface_new(&remote.interface, remote.controller.c_str());
 			xwii_iface_open(remote.interface, XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
 			if (xwii_iface_opened(remote.interface) & XWII_IFACE_CORE && xwii_iface_opened(remote.interface) & XWII_IFACE_IR) {
@@ -97,6 +97,7 @@ void WiiIo::Loop()
 				default: break;
 			}
 		}
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
 }
 

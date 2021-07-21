@@ -39,13 +39,13 @@ public:
 
 	void Loop();
 private:
-	enum AxisType {
+	enum class AxisType {
 		Stick,
 		Trigger,
 	};
 
-	jvs_input_states_t *Inputs;
-	SDL_GameController *controller;
+	jvs_input_states_t *Inputs{nullptr};
+	SDL_GameController *controller{nullptr};
 	SDL_Event event;
 
 	void ButtonPressHandler(SDL_ControllerButtonEvent *button);

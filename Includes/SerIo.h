@@ -30,7 +30,7 @@
 class SerIo
 {
 public:
-	enum Status {
+	enum class Status {
 		Okay,
 		Timeout,
 		ReadError,
@@ -38,7 +38,7 @@ public:
 		ZeroSizeError,
 	};
 
-	bool IsInitialized;
+	bool IsInitialized{};
 
 	SerIo(const char *devicePath);
 	~SerIo();
@@ -46,10 +46,8 @@ public:
 	SerIo::Status Read(std::vector<uint8_t> &buffer);
 	SerIo::Status Write(std::vector<uint8_t> &buffer);
 private:
-	int SerialHandler;
-
-	sp_port *Port;
-	sp_port_config *PortConfig;
+	sp_port *Port{nullptr};
+	sp_port_config *PortConfig{nullptr};
 };
 
 #endif

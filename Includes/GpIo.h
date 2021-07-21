@@ -31,18 +31,17 @@
 class GpIo
 {
 public:
-	enum SenseType{
+	enum class SenseType{
 		None,
 		Float,
-		//Switch,
 	};
 
-	enum PinMode{
+	enum class PinMode{
 		In,
 		Out,
 	};
 
-	enum PinState{
+	enum class PinState{
 		Low,
 		High,
 	};

@@ -36,16 +36,16 @@
 #define JVS_MAX_GPO (6)
 
 typedef struct {
-	bool start = false;
-	bool service = false;
-	bool up = false;
-	bool down = false;
-	bool left = false;
-	bool right = false;
-	bool button[7] = { false };
+	bool start{};
+	bool service{};
+	bool up{};
+	bool down{};
+	bool left{};
+	bool right{};
+	bool button[7]{};
 
 	uint8_t GetByte0() {
-		uint8_t value = 0;
+		uint8_t value{};
 		value |= start     ? 1 << 7 : 0;
 		value |= service   ? 1 << 6 : 0;
 		value |= up        ? 1 << 5 : 0;
@@ -58,7 +58,7 @@ typedef struct {
 	}
 
 	uint8_t GetByte1() {
-		uint8_t value = 0;
+		uint8_t value{};
 		value |= button[2] ? 1 << 7 : 0;
 		value |= button[3] ? 1 << 6 : 0;
 		value |= button[4] ? 1 << 5 : 0;
@@ -69,10 +69,10 @@ typedef struct {
 } jvs_switch_player_inputs_t;
 
 typedef struct {
-	bool button[16] = { false };
+	bool button[16]{};
 
 	uint8_t GetByte0() {
-		uint8_t value = 0;
+		uint8_t value{};
 		value |= button[0] ? 1 << 7 : 0;
 		value |= button[1] ? 1 << 6 : 0;
 		value |= button[2] ? 1 << 5 : 0;
@@ -85,7 +85,7 @@ typedef struct {
 	}
 
 	uint8_t GetByte1() {
-		uint8_t value = 0;
+		uint8_t value{};
 		value |= button[8]  ? 1 << 7 : 0;
 		value |= button[9]  ? 1 << 6 : 0;
 		value |= button[10] ? 1 << 5 : 0;
@@ -99,13 +99,13 @@ typedef struct {
 } jvs_switch_general_inputs_t;
 
 typedef struct {
-	bool test = false;
-	bool tilt_1 = false;
-	bool tilt_2 = false;
-	bool tilt_3 = false;
+	bool test{};
+	bool tilt_1{};
+	bool tilt_2{};
+	bool tilt_3{};
 
 	uint8_t GetByte0() {
-		uint8_t value = 0;
+		uint8_t value{};
 		value |= test   ? 1 << 7 : 0;
 		value |= tilt_1 ? 1 << 6 : 0;
 		value |= tilt_2 ? 1 << 5 : 0;
@@ -121,7 +121,7 @@ typedef struct {
 } jvs_switch_inputs_t;
 
 typedef struct {
-	uint16_t value = 0x0000;
+	uint16_t value{};
 
 	uint8_t GetByte0() {
 		return (value >> 8) & 0xFF;
@@ -140,14 +140,11 @@ typedef struct {
 		Busy = 3,
 	};
 
-	uint16_t coins = 0;
-	uint8_t status = CoinStatus::Normal;
+	uint16_t coins{};
+	uint8_t status{CoinStatus::Normal};
 
 	uint8_t GetByte0() {
-		uint8_t value = 0;
-		value |= (status << 6) & 0xC0;
-		value |= (coins >> 8) & 0x3F;
-		return value;
+		return ((coins >> 8) & 0x3F) | ((status << 6) & 0xC0);
 	}
 
 	uint8_t GetByte1() {
@@ -156,7 +153,7 @@ typedef struct {
 } jvs_coin_slots_t;
 
 typedef struct {
-	uint32_t position = 0x00000000;
+	uint32_t position{};
 
 	uint8_t GetByte0() {
 		return (position >> 24) & 0xFF;
@@ -185,7 +182,7 @@ typedef struct {
 class JvsIo
 {
 public:
-	enum Status {
+	enum class Status {
 		Okay,
 		SyncError,
 		SumError,
@@ -195,30 +192,30 @@ public:
 		ServerWaitingReply,
 	};
 
-	enum SenseStates {
+	enum class SenseState {
 		NotConnected,
 		Connected,
 	};
 
-	SenseStates pSense = SenseStates::NotConnected;
-	bool pSenseChange = false;
+	SenseState pSense{SenseState::NotConnected};
+	bool pSenseChange{};
 	jvs_input_states_t Inputs;
 
-	JvsIo(SenseStates sense);
+	JvsIo(SenseState sense);
 
 	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer);
 	JvsIo::Status ReceivePacket(std::vector<uint8_t> &buffer);
-	uint8_t GetDeviceId();
 private:
-	const uint8_t SYNC_BYTE = 0xE0;
-	const uint8_t ESCAPE_BYTE = 0xD0;
+	static const uint8_t SYNC_BYTE{0xE0};
+	static const uint8_t ESCAPE_BYTE{0xD0};
 
-	const uint8_t TARGET_MASTER = 0x00;
-	const uint8_t TARGET_BROADCAST = 0xFF;	
+	static const uint8_t TARGET_MASTER{0x00};
+	static const uint8_t TARGET_BROADCAST{0xFF};
 
 	uint8_t GetByte(std::vector<uint8_t> &buffer);
 	uint8_t GetEscapedByte(std::vector<uint8_t> &buffer);
-	void HandlePacket(std::vector<uint8_t>& packet);
+
+	void HandlePacket(std::vector<uint8_t> &packet);
 
 	void SendByte(std::vector<uint8_t> &buffer, uint8_t value);
 	void SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value);
@@ -275,15 +272,14 @@ private:
 	uint8_t Jvs_Command_32_GeneralPurposeOutput(uint8_t *data);
 	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
 
-	bool BroadcastPacket = false;			// Set when the last command was a broadcast
-	uint8_t DeviceId = 0;					// Device ID assigned by running title
-	std::vector<uint8_t> ResponseBuffer;	// Command Response
+	uint8_t DeviceID{}; // Device ID assigned by running title
+	std::vector<uint8_t> ResponseBuffer{}; // Command Response
 
 	// Device info
-	uint8_t CommandFormatRevision;
-	uint8_t JvsVersion;
-	uint8_t CommunicationVersion;
-	std::string BoardID;
+	uint8_t CommandFormatRevision{};
+	uint8_t JvsVersion{};
+	uint8_t CommunicationVersion{};
+	std::string BoardID{};
 };
 
 #endif

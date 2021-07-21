@@ -29,7 +29,7 @@
 
 //#define DEBUG_JVS_PACKETS
 
-JvsIo::JvsIo(SenseStates sense)
+JvsIo::JvsIo(SenseState sense)
 {
 	pSense = sense;
 
@@ -41,34 +41,26 @@ JvsIo::JvsIo(SenseStates sense)
 	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.00";
 }
 
-uint8_t JvsIo::GetDeviceId()
-{
-	return BroadcastPacket ? 0x00 : DeviceId;
-}
-
 uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 {
 	uint8_t ensure_reset = data[1];
 
 	if (ensure_reset == 0xD9) {
-		pSense = SenseStates::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
+		pSense = SenseState::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
 		pSenseChange = true;
 		//ResponseBuffer.push_back(JvsReportCode::Handled);
-		DeviceId = 0;
+		DeviceID = 0;
 	}
 	return 1;
 }
 
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
-	// Set Address
-	if (DeviceId == 0) {
-		DeviceId = data[1];
+	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-		pSense = SenseStates::Connected; // Set sense to 0v.
-		pSenseChange = true;
-		ResponseBuffer.push_back(JvsReportCode::Handled);
-	}
+	DeviceID = data[1]; // Set address.
+	pSense = SenseState::Connected; // Signal to set sense to 0v.
+	pSenseChange = true;
 
 	return 1;
 }
@@ -158,7 +150,7 @@ uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 	std::string masterId;
 
 	// Skip first 2 bytes, max size is 100, break on null.
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i != 100; i++) {
 		if (data[i+2] == 0x00)
 			break;
 		masterId.push_back(data[i+2]);
@@ -183,8 +175,8 @@ uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 
 	ResponseBuffer.push_back(Inputs.switches.system.GetByte0());
 
-	for (int i = 0; i < nr_switch_players; i++) {
-		for (int j = 0; j < bytesPerSwitchPlayerInput; j++) {
+	for (int i = 0; i != nr_switch_players; i++) {
+		for (int j = 0; j != bytesPerSwitchPlayerInput; j++) {
 			// If a title asks for more switch player inputs than we support, pad with dummy data
 			jvs_switch_player_inputs_t &switch_player_input = (i >= JVS_MAX_PLAYERS) ? default_switch_player_input : Inputs.switches.player[i];
 			uint8_t value
@@ -205,9 +197,9 @@ uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 	
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-	for (int i = 0; i < nr_coin_slots; i++) {
+	for (int i = 0; i != nr_coin_slots; i++) {
 		const uint8_t bytesPerCoinSlot = 2;
-		for (int j = 0; j < bytesPerCoinSlot; j++) {
+		for (int j = 0; j != bytesPerCoinSlot; j++) {
 			// If a title asks for more coin slots than we support, pad with dummy data
 			jvs_coin_slots_t &coin_slot = (i >= JVS_MAX_COINS) ? default_coin_slot : Inputs.coins[i];
 			uint8_t value
@@ -228,9 +220,9 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-	for (int i = 0; i < nr_analog_inputs; i++) {
+	for (int i = 0; i != nr_analog_inputs; i++) {
 		const uint8_t bytesPerAnalogInput = 2;
-		for (int j = 0; j < bytesPerAnalogInput; j++) {
+		for (int j = 0; j != bytesPerAnalogInput; j++) {
 			// If a title asks for more analog input than we support, pad with dummy data
 			jvs_analog_input_t &analog_input = (i >= JVS_MAX_ANALOG) ? default_analog : Inputs.analog[i];
 			uint8_t value
@@ -252,9 +244,9 @@ uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-	for (int i = 0; i < nr_screen_inputs; i++) {
+	for (int i = 0; i != nr_screen_inputs; i++) {
 		const uint8_t bytesPerScreenInput = 4;
-		for (int j = 0; j < bytesPerScreenInput; j++) {
+		for (int j = 0; j != bytesPerScreenInput; j++) {
 			// If a title asks for more screen channels than we support, pad with dummy data
 			jvs_screen_pos_input_t &screen_pos_input = (i >= JVS_MAX_SCREEN_CHANNELS) ? default_screen_pos : Inputs.screen[i];
 			uint8_t value
@@ -278,7 +270,7 @@ uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 
 	ResponseBuffer.push_back(JvsReportCode::Handled);
 
-	for (int j = 0; j < bytesPerSwitchGeneralInput; j++) {
+	for (int j = 0; j != bytesPerSwitchGeneralInput; j++) {
 		// If a title asks for more switch player inputs than we support, pad with dummy data
 		uint8_t value
 			= (j == 0) ? switch_general_input.GetByte0()
@@ -314,7 +306,7 @@ uint8_t JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t *data)
 
 #ifdef DEBUG_GENERAL_OUT
 	std::cout << "JvsIo::Jvs_Command_32_GeneralPurposeOutput:";
-	for (int i = 0; i < banks; i++) {
+	for (int i = 0; i != banks; i++) {
 		if (i <= JVS_MAX_GPO) {
 			std::string gpo_pin = std::bitset<8>(data[i+2]).to_string();
 			std::printf(" %s", gpo_pin.c_str());
@@ -348,16 +340,13 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
 	ResponseBuffer.push_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
 
-	for (size_t i = 0; i < packet.size(); i++) {
-
-		BroadcastPacket = packet.at(i) >= 0xF0; // Set a flag when broadcast packet
-
+	for (size_t i = 0; i != packet.size(); i++) {
 		uint8_t *command_data = &packet.at(i);
 		switch (packet.at(i)) {
 			// Broadcast Commands
 			case 0xF0: i += Jvs_Command_F0_Reset(command_data); break;
 			case 0xF1:
-				if (DeviceId != 0) {
+				if (DeviceID != 0) {
 					// TODO: Refactor so we can just ignore things like this, for now
 					// clear out the buffer so we cause a check in JvsIo::SendPacket to
 					// fail so we don't send out a broken packet.
@@ -420,12 +409,12 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 #ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!\n";
 #endif
-		return SyncError;
+		return Status::SyncError;
 	}
 
 	uint8_t target = GetEscapedByte(buffer);
-	if (target != TARGET_BROADCAST && target != DeviceId) {
-		return WrongTarget;
+	if (target != TARGET_BROADCAST && target != DeviceID) {
+		return Status::WrongTarget;
 	}
 
 	// Miscount can happen if we read too fast or we start *after* master already has a slave.
@@ -434,7 +423,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 #ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
 #endif
-		return CountError;
+		return Status::CountError;
 	}
 
 	// Calculate the checksum
@@ -443,7 +432,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Decode the payload data
 	// TODO: don't put in another vector just to send off
 	std::vector<uint8_t> packet;
-	for (int i = 0; i < count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
+	for (int i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
 		packet.push_back(value);
 		actual_checksum += value;
@@ -456,12 +445,12 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
 		ResponseBuffer.push_back(JvsStatusCode::ChecksumError);
-		return SumError;
+		return Status::SumError;
 	}
 
 	HandlePacket(packet);
 
-	return Okay;
+	return Status::Okay;
 }
 
 void JvsIo::SendByte(std::vector<uint8_t> &buffer, uint8_t value)
@@ -484,7 +473,7 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 {
 	// This shouldn't happen...
 	if (ResponseBuffer.empty()) {
-		return EmptyResponse;
+		return Status::EmptyResponse;
 	}
 
 	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
@@ -515,5 +504,5 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 	std::cout << std::endl;
 #endif
 
-	return Okay;
+	return Status::Okay;
 }

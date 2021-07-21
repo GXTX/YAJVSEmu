@@ -36,10 +36,10 @@
 #include "JvsIo.h"
 
 typedef struct {
-	uint8_t id;
-	int fd;
-	std::string controller;
-	xwii_iface *interface;
+	uint8_t id{};
+	int fd{};
+	std::string controller{};
+	xwii_iface *interface{nullptr};
 } wiiremote;
 
 class WiiIo
@@ -50,13 +50,13 @@ public:
 
 	void Loop();
 private:
-	enum MovementValueType {
+	enum class MovementValueType {
 		Analog,
 		ScreenPos,
 	};
 
-	jvs_input_states_t *Inputs;
-	std::vector<wiiremote> Player;
+	jvs_input_states_t *Inputs{nullptr};
+	std::vector<wiiremote> Player{};
 	xwii_event event;
 
 	void ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *fd);

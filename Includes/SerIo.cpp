@@ -41,8 +41,8 @@ SerIo::SerIo(const char *devicePath)
 		std::cout << std::endl;
 		IsInitialized = false;
 	} else {
-		IsInitialized = true;
 		sp_set_config(Port, PortConfig);
+		IsInitialized = true;
 	}
 }
 
@@ -55,7 +55,7 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 {
 	// This shouldn't happen...
 	if (buffer.empty()) {
-		return ZeroSizeError;
+		return Status::ZeroSizeError;
 	}
 
 #ifdef DEBUG_SERIAL
@@ -70,15 +70,15 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	int ret = sp_nonblocking_write(Port, buffer.data(), buffer.size());
 
 	if (ret <= 0) {
-		return WriteError;
+		return Status::WriteError;
 	} else if (ret != (int)buffer.size()) {
 #ifdef DEBUG_SERIAL
 		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, (int)buffer.size());
 #endif
-		return WriteError;
+		return Status::WriteError;
 	}
 
-	return Okay;
+	return Status::Okay;
 }
 
 SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
@@ -86,9 +86,9 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 	int bytes = sp_input_waiting(Port);
 
 	if (bytes == 0) {
-		return ZeroSizeError;
+		return Status::ZeroSizeError;
 	} else if (bytes < 0) {
-		return ReadError;
+		return Status::ReadError;
 	}
 
 	buffer.resize(bytes);
@@ -96,7 +96,7 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 	int ret = sp_nonblocking_read(Port, buffer.data(), buffer.size());
 
 	if (ret <= 0) {
-		return ReadError;
+		return Status::ReadError;
 	}
 
 #ifdef DEBUG_SERIAL
@@ -107,5 +107,5 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 	std::cout << std::endl;
 #endif
 
-	return Okay;
+	return Status::Okay;
 }

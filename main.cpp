@@ -32,31 +32,27 @@
 #include "WiiIo.h"
 #include "version.h"
 
-std::atomic<bool> running = true;
-
-// NOTE: Some systems and some situations (as a slave) require a longer delay.
-#ifdef LONG_DELAY
-auto delay = std::chrono::milliseconds(1);
+#ifdef REAL_TIME
+// If we don't delay longer we'll starve the other processes of CPU time.
+auto delay{std::chrono::microseconds(25)};
 #else
-auto delay = std::chrono::microseconds(50);
+auto delay{std::chrono::microseconds(5)};
 #endif
 
+std::atomic<bool> running{true};
+
 void sig_handle(int sig) {
-	switch (sig) {
-		case SIGINT:
-		case SIGTERM:
-			running = false;
-			break;
-		default: break;
+	if (sig == SIGINT || sig == SIGTERM) {
+		running = false;
 	}
 }
 
 // TODO: Replace with ini setup
-static const std::string dev = "/dev/ttyUSB0";
+static const std::string dev{"/dev/ttyUSB0"};
 
 int main()
 {
-	std::printf("%s: %s - %s (%s %s)\n", PROJECT_NAME,
+	std::printf("%s: %s - %s (Build Date: %s %s)\n", PROJECT_NAME,
 #ifdef NDEBUG
 "Release",
 #else
@@ -67,7 +63,7 @@ int main()
 #ifdef REAL_TIME
 	// Set thread priority to RT. We don't care if this
 	// fails but may be required for some systems.
-	sched_param params = {sched_get_priority_max(SCHED_FIFO)};
+	sched_param params{sched_get_priority_max(SCHED_FIFO)};
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
 #endif
 
@@ -82,7 +78,7 @@ int main()
 	}
 
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
-	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseStates::NotConnected));
+	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
 
 	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev.c_str()));
 	if (!SerialHandler->IsInitialized) {
@@ -102,7 +98,7 @@ int main()
 	JvsIo::Status jvsStatus;
 	SerIo::Status serialStatus;
 
-	std::vector<uint8_t> SerialBuffer;
+	std::vector<uint8_t> SerialBuffer{};
 
 	while (running) {
 		if (!SerialBuffer.empty()) {
@@ -110,7 +106,7 @@ int main()
 		}
 
 		serialStatus = SerialHandler->Read(SerialBuffer);
-		if (serialStatus != SerIo::Okay) {
+		if (serialStatus != SerIo::Status::Okay) {
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
@@ -118,16 +114,16 @@ int main()
 		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
 
 		if(JVSHandler->pSenseChange){
-			if(JVSHandler->pSense == JvsIo::NotConnected) {
-				GPIOHandler->SetMode(GpIo::In);
+			if(JVSHandler->pSense == JvsIo::SenseState::NotConnected) {
+				GPIOHandler->SetMode(GpIo::PinMode::In);
 			} else {
-				GPIOHandler->SetMode(GpIo::Out);
-				GPIOHandler->Write(GpIo::Low);
+				GPIOHandler->SetMode(GpIo::PinMode::Out);
+				GPIOHandler->Write(GpIo::PinState::Low);
 			}
 			JVSHandler->pSenseChange = false;
 		}
 
-		if (jvsStatus == JvsIo::Okay || jvsStatus == JvsIo::SumError) {
+		if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
 			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
 			SerialHandler->Write(SerialBuffer);
 		}

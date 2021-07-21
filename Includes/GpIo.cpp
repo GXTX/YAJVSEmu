@@ -63,7 +63,7 @@ void GpIo::Write(PinState state)
 	} else if (state == PinState::High) {
 		bcm2835_gpio_write(PIN, HIGH);
 #ifdef DEBUG_GPIO
-		std::puts("GpIo::Write: Pullingup the sense line.");
+		std::puts("GpIo::Write: Pulling up the sense line.");
 #endif
 	}
 }
