@@ -99,6 +99,7 @@ int main()
 	SerIo::Status serialStatus;
 
 	std::vector<uint8_t> SerialBuffer{};
+	SerialBuffer.reserve(512);
 
 	while (running) {
 		if (!SerialBuffer.empty()) {

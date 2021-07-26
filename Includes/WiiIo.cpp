@@ -127,13 +127,13 @@ void WiiIo::ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *f
 
 void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType type)
 {
-	int middlex;
-	int middley;
+	int middlex{};
+	int middley{};
 
 	// NOTE: Due to bugs with libxwiimote we can sometimes present as a valid 1 & 2
 	// but report as X:0 & Y:0, where we would actually want to read from 1 & 3.
 	// This generally only happens with 3rd party Nyko controllers.
-	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1]) && ir[1].x != 0 && ir[1].y != 0 ) {
+	if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[1])) {
 		middlex = (ir[0].x + ir[1].x) / 2;
 		middley = (ir[0].y + ir[1].y) / 2;
 	} else if (xwii_event_ir_is_valid(&ir[0]) && xwii_event_ir_is_valid(&ir[2])) {
@@ -147,10 +147,10 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 	float valuey = middley;
 
 	uint16_t finalx = std::fabs(valuex / 1023) * 0xFFFF;
-	uint16_t finaly = std::fabs(valuey / 1023) * 0xFFFF;
+	uint16_t finaly = (valuey / 1023) * 0xFFFF;
 
 #ifdef DEBUG_IR_POS
-	std::printf("POS: %04x/%04x\n", finalx, finaly);
+	std::printf("POS: %04X/%04X\n", finalx, finaly);
 #endif
 
 	if (type == MovementValueType::Analog) {

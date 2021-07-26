@@ -39,6 +39,8 @@ JvsIo::JvsIo(SenseState sense)
 	CommunicationVersion = 0x10;
 
 	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.00";
+
+	ResponseBuffer.reserve(512);
 }
 
 uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
@@ -48,7 +50,7 @@ uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 	if (ensure_reset == 0xD9) {
 		pSense = SenseState::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
 		pSenseChange = true;
-		//ResponseBuffer.push_back(JvsReportCode::Handled);
+		//ResponseBuffer.emplace_back(JvsReportCode::Handled);
 		DeviceID = 0;
 	}
 	return 1;
@@ -56,7 +58,7 @@ uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	DeviceID = data[1]; // Set address.
 	pSense = SenseState::Connected; // Signal to set sense to 0v.
@@ -67,7 +69,7 @@ uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_10_GetBoardId()
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 	std::copy(BoardID.begin(), BoardID.end(), std::back_inserter(ResponseBuffer));
 
 	return 0;
@@ -75,69 +77,69 @@ uint8_t JvsIo::Jvs_Command_10_GetBoardId()
 
 uint8_t JvsIo::Jvs_Command_11_GetCommandFormat()
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
-	ResponseBuffer.push_back(CommandFormatRevision);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(CommandFormatRevision);
 
 	return 0;
 }
 
 uint8_t JvsIo::Jvs_Command_12_GetJvsRevision()
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
-	ResponseBuffer.push_back(JvsVersion);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsVersion);
 
 	return 0;
 }
 
 uint8_t JvsIo::Jvs_Command_13_GetCommunicationVersion()
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
-	ResponseBuffer.push_back(CommunicationVersion);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(CommunicationVersion);
 
 	return 0;
 }
 
 uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	// Capabilities list (4 bytes each)
 
 	// Input capabilities
-	ResponseBuffer.push_back(JvsCapabilityCode::PlayerSwitchButtonSets);
-	ResponseBuffer.push_back(JVS_MAX_PLAYERS); // number of players
-	ResponseBuffer.push_back(13); // 13 button switches per player
-	ResponseBuffer.push_back(0);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::PlayerSwitchButtonSets);
+	ResponseBuffer.emplace_back(JVS_MAX_PLAYERS); // number of players
+	ResponseBuffer.emplace_back(13); // 13 button switches per player
+	ResponseBuffer.emplace_back(0);
 
-	ResponseBuffer.push_back(JvsCapabilityCode::CoinSlots);
-	ResponseBuffer.push_back(JVS_MAX_COINS); // number of coin slots
-	ResponseBuffer.push_back(0);
-	ResponseBuffer.push_back(0);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::CoinSlots);
+	ResponseBuffer.emplace_back(JVS_MAX_COINS); // number of coin slots
+	ResponseBuffer.emplace_back(0);
+	ResponseBuffer.emplace_back(0);
 
-	ResponseBuffer.push_back(JvsCapabilityCode::AnalogInputs);
-	ResponseBuffer.push_back(JVS_MAX_ANALOG); // number of analog input channels
-	ResponseBuffer.push_back(16); // 16 bits per analog input channel
-	ResponseBuffer.push_back(0);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::AnalogInputs);
+	ResponseBuffer.emplace_back(JVS_MAX_ANALOG); // number of analog input channels
+	ResponseBuffer.emplace_back(16); // 16 bits per analog input channel
+	ResponseBuffer.emplace_back(0);
 /*
 	// Input switches
-	ResponseBuffer.push_back(JvsCapabilityCode::SwitchInputs);
-	ResponseBuffer.push_back(0);
-	ResponseBuffer.push_back(16);
-	ResponseBuffer.push_back(0);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::SwitchInputs);
+	ResponseBuffer.emplace_back(0);
+	ResponseBuffer.emplace_back(16);
+	ResponseBuffer.emplace_back(0);
 
 	// NOTE: SEGA hardware used/uses 12 bits, NAMCO is known to use 16 bits.
-	ResponseBuffer.push_back(JvsCapabilityCode::ScreenPointerInputs);
-	ResponseBuffer.push_back(16); // 16bits for X
-	ResponseBuffer.push_back(16); // Y
-	ResponseBuffer.push_back(JVS_MAX_SCREEN_CHANNELS);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::ScreenPointerInputs);
+	ResponseBuffer.emplace_back(16); // 16bits for X
+	ResponseBuffer.emplace_back(16); // Y
+	ResponseBuffer.emplace_back(JVS_MAX_SCREEN_CHANNELS);
 */
 	// Output capabilities
-	ResponseBuffer.push_back(JvsCapabilityCode::GeneralPurposeOutputs);
-	ResponseBuffer.push_back(JVS_MAX_GPO); // number of outputs
-	ResponseBuffer.push_back(0);
-	ResponseBuffer.push_back(0);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::GeneralPurposeOutputs);
+	ResponseBuffer.emplace_back(JVS_MAX_GPO); // number of outputs
+	ResponseBuffer.emplace_back(0);
+	ResponseBuffer.emplace_back(0);
 
-	ResponseBuffer.push_back(JvsCapabilityCode::EndOfCapabilities);
+	ResponseBuffer.emplace_back(JvsCapabilityCode::EndOfCapabilities);
 
 	return 0;
 }
@@ -145,7 +147,7 @@ uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 // TODO: Verify with a test case...
 uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	std::string masterId;
 
@@ -171,9 +173,9 @@ uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 	uint8_t nr_switch_players = data[1];
 	uint8_t bytesPerSwitchPlayerInput = data[2];
 
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
-	ResponseBuffer.push_back(Inputs.switches.system.GetByte0());
+	ResponseBuffer.emplace_back(Inputs.switches.system.GetByte0());
 
 	for (int i = 0; i != nr_switch_players; i++) {
 		for (int j = 0; j != bytesPerSwitchPlayerInput; j++) {
@@ -183,7 +185,7 @@ uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 				= (j == 0) ? switch_player_input.GetByte0()
 				: (j == 1) ? switch_player_input.GetByte1()
 				: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
-			ResponseBuffer.push_back(value);
+			ResponseBuffer.emplace_back(value);
 		}
 	}
 
@@ -195,7 +197,7 @@ uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 	static jvs_coin_slots_t default_coin_slot;
 	uint8_t nr_coin_slots = data[1];
 	
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	for (int i = 0; i != nr_coin_slots; i++) {
 		const uint8_t bytesPerCoinSlot = 2;
@@ -206,7 +208,7 @@ uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 				= (j == 0) ? coin_slot.GetByte0()
 				: (j == 1) ? coin_slot.GetByte1()
 				: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
-			ResponseBuffer.push_back(value);
+			ResponseBuffer.emplace_back(value);
 		}
 	}
 
@@ -218,7 +220,7 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 	static jvs_analog_input_t default_analog;
 	uint8_t nr_analog_inputs = data[1];
 
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	for (int i = 0; i != nr_analog_inputs; i++) {
 		const uint8_t bytesPerAnalogInput = 2;
@@ -229,7 +231,7 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 				= (j == 0) ? analog_input.GetByte0()
 				: (j == 1) ? analog_input.GetByte1()
 				: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
-			ResponseBuffer.push_back(value);
+			ResponseBuffer.emplace_back(value);
 		}
 	}
 
@@ -242,7 +244,7 @@ uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 	static jvs_screen_pos_input_t default_screen_pos;
 	uint8_t nr_screen_inputs = data[1];
 
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	for (int i = 0; i != nr_screen_inputs; i++) {
 		const uint8_t bytesPerScreenInput = 4;
@@ -255,7 +257,7 @@ uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 				: (j == 2) ? screen_pos_input.GetByte2()
 				: (j == 3) ? screen_pos_input.GetByte3()
 				: 0;
-			ResponseBuffer.push_back(value);
+			ResponseBuffer.emplace_back(value);
 		}
 	}
 
@@ -268,7 +270,7 @@ uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 	uint8_t bytesPerSwitchGeneralInput = data[1]; //?
 	jvs_switch_general_inputs_t &switch_general_input = Inputs.switches.general;
 
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	for (int j = 0; j != bytesPerSwitchGeneralInput; j++) {
 		// If a title asks for more switch player inputs than we support, pad with dummy data
@@ -276,7 +278,7 @@ uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 			= (j == 0) ? switch_general_input.GetByte0()
 			: (j == 1) ? switch_general_input.GetByte1()
 			: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
-		ResponseBuffer.push_back(value);
+		ResponseBuffer.emplace_back(value);
 	}
 
 	return 2;
@@ -284,7 +286,7 @@ uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_30_CoinSubtractionOutput(uint8_t *data)
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	uint8_t slot = data[1] - 1;
 	uint16_t decrement = (data[2] << 8) | data[3];
@@ -302,7 +304,7 @@ uint8_t JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t *data)
 {
 	uint8_t banks = data[1];
 
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 #ifdef DEBUG_GENERAL_OUT
 	std::cout << "JvsIo::Jvs_Command_32_GeneralPurposeOutput:";
@@ -320,7 +322,7 @@ uint8_t JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 {
-	ResponseBuffer.push_back(JvsReportCode::Handled);
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
 	uint8_t slot = data[1] - 1;
 	uint16_t increment = (data[2] << 8) | data[3];
@@ -338,7 +340,7 @@ uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 {
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
-	ResponseBuffer.push_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
+	ResponseBuffer.emplace_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
 
 	for (size_t i = 0; i != packet.size(); i++) {
 		uint8_t *command_data = &packet.at(i);
@@ -432,9 +434,10 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Decode the payload data
 	// TODO: don't put in another vector just to send off
 	std::vector<uint8_t> packet;
+	packet.reserve(512);
 	for (int i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
-		packet.push_back(value);
+		packet.emplace_back(value);
 		actual_checksum += value;
 	}
 
@@ -444,7 +447,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Verify checksum - skip packet if invalid
 	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
-		ResponseBuffer.push_back(JvsStatusCode::ChecksumError);
+		ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
 		return Status::SumError;
 	}
 
@@ -455,7 +458,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 
 void JvsIo::SendByte(std::vector<uint8_t> &buffer, uint8_t value)
 {
-	buffer.push_back(value);
+	buffer.emplace_back(value);
 }
 
 void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
