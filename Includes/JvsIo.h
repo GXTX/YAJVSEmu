@@ -203,7 +203,7 @@ public:
 
 	JvsIo(SenseState sense);
 
-	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer);
+	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer, std::vector<uint8_t> &commands);
 	JvsIo::Status ReceivePacket(std::vector<uint8_t> &buffer);
 private:
 	static const uint8_t SYNC_BYTE{0xE0};

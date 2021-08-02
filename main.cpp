@@ -28,13 +28,8 @@
 #include "JvsIo.h"
 #include "SerIo.h"
 
-#ifdef REAL_TIME
-// If we don't delay longer we'll starve the other processes of CPU time.
-auto delay{std::chrono::microseconds(25)};
-#else
-auto delay{std::chrono::microseconds(5)};
-#endif
 
+auto delay{std::chrono::microseconds(5)};
 std::atomic<bool> running{true};
 
 void sig_handle(int sig) {
@@ -48,19 +43,11 @@ static const std::string dev{"/dev/ttyUSB0"};
 
 int main()
 {
-#ifdef REAL_TIME
-	// Set thread priority to RT. We don't care if this
-	// fails but may be required for some systems.
-	sched_param params{sched_get_priority_max(SCHED_FIFO)};
-	pthread_setschedparam(pthread_self(), SCHED_FIFO, &params);
-#endif
-
 	// Handle quitting gracefully via signals
 	std::signal(SIGINT, sig_handle);
 	std::signal(SIGTERM, sig_handle);
 
-	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
-	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
+	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::Connected));
 
 	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev.c_str()));
 	if (!SerialHandler->IsInitialized) {
@@ -74,25 +61,47 @@ int main()
 	std::vector<uint8_t> SerialBuffer{};
 	SerialBuffer.reserve(512);
 
+	std::vector<uint8_t> commands{0x70, 0x01, 0x00, 0x00};
+
 	while (running) {
+		std::this_thread::sleep_for(delay);
+
 		if (!SerialBuffer.empty()) {
 			SerialBuffer.clear();
 		}
 
-		serialStatus = SerialHandler->Read(SerialBuffer);
-		if (serialStatus != SerIo::Status::Okay) {
-			std::this_thread::sleep_for(delay);
-			continue;
+		JVSHandler->SendPacket(SerialBuffer, commands);
+		SerialHandler->Write(SerialBuffer);
+
+		while (true) {
+			serialStatus = SerialHandler->Read(SerialBuffer);
+			if (serialStatus != SerIo::Status::Okay) {
+				std::this_thread::sleep_for(delay);
+				continue;
+			}
+			break;
 		}
 
-		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
+		// TODO: Process the received packet into something more readable.
 
-		if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
-			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
-			SerialHandler->Write(SerialBuffer);
-		}
+		//while (serialStatus = SerialHandler->Read(SerialBuffer) != SerIo::Status::Okay) {
+		//	std::this_thread::sleep_for(delay);
+		//	continue;
+		//}
 
-		std::this_thread::sleep_for(delay);
+		//serialStatus = SerialHandler->Read(SerialBuffer);
+		//if (serialStatus != SerIo::Status::Okay) {
+		//	continue;
+		//}
+
+
+
+		//jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
+
+		//if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
+		//	jvsStatus = JVSHandler->SendPacket(SerialBuffer, commands);
+		//	SerialHandler->Write(SerialBuffer);
+		//}
 	}
 
 	return 0;

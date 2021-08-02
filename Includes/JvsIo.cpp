@@ -27,7 +27,7 @@
 
 #include "JvsIo.h"
 
-//#define DEBUG_JVS_PACKETS
+#define DEBUG_JVS_PACKETS
 
 JvsIo::JvsIo(SenseState sense)
 {
@@ -472,17 +472,23 @@ void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 	SendByte(buffer, value);
 }
 
-JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
+JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, std::vector<uint8_t> &commands)
 {
+	//ResponseBuffer.emplace_back(0x70);
+	//ResponseBuffer.emplace_back(0x00);
+
 	// This shouldn't happen...
-	if (ResponseBuffer.empty()) {
-		return Status::EmptyResponse;
-	}
+	//if (ResponseBuffer.empty()) {
+	//	return Status::EmptyResponse;
+	//}
+
+	std::copy(commands.begin(), commands.end(), std::back_inserter(ResponseBuffer));
 
 	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
 	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
-	SendEscapedByte(buffer, TARGET_MASTER);
+	//SendEscapedByte(buffer, TARGET_MASTER);
+	SendEscapedByte(buffer, TARGET_BROADCAST); // Target IO board should reply to *all* broadcast requests.
 	SendEscapedByte(buffer, (uint8_t)ResponseBuffer.size() + 1);
 
 	// Calculate the checksum, normally you would add the target, but we only talk to TARGET_MASTER
@@ -504,7 +510,7 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 	for (uint8_t n : buffer) {
 		std::printf(" %02X", n);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 	return Status::Okay;
