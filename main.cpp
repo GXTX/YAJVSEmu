@@ -27,10 +27,6 @@
 
 #include "JvsIo.h"
 #include "SerIo.h"
-#include "GpIo.h"
-#include "SdlIo.h"
-#include "WiiIo.h"
-#include "version.h"
 
 #ifdef REAL_TIME
 // If we don't delay longer we'll starve the other processes of CPU time.
@@ -52,14 +48,6 @@ static const std::string dev{"/dev/ttyUSB0"};
 
 int main()
 {
-	std::printf("%s: %s - %s (Build Date: %s %s)\n", PROJECT_NAME,
-#ifdef NDEBUG
-"Release",
-#else
-"Debug",
-#endif
-	GIT_VERSION, __DATE__, __TIME__);
-
 #ifdef REAL_TIME
 	// Set thread priority to RT. We don't care if this
 	// fails but may be required for some systems.
@@ -71,12 +59,6 @@ int main()
 	std::signal(SIGINT, sig_handle);
 	std::signal(SIGTERM, sig_handle);
 
-	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
-	if (!GPIOHandler->IsInitialized) {
-		std::cerr << "Couldn't initalize GPIO controller and 'NONE' wasn't explicitly set.\n";
-		return 1;
-	}
-
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
 	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
 
@@ -85,15 +67,6 @@ int main()
 		std::cerr << "Coudln't initiate the serial controller.\n";
 		return 1;
 	}
-
-	// Spawn lone SDL2 or WiiIo input thread.
-	// NOTE: There probably is no reason we can't have both of these running
-	//if (setup.sdlbackend) {
-		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(0, &JVSHandler->Inputs)).detach();
-	//}
-	//else {
-		//std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
-	//}
 
 	JvsIo::Status jvsStatus;
 	SerIo::Status serialStatus;
@@ -113,16 +86,6 @@ int main()
 		}
 
 		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
-
-		if(JVSHandler->pSenseChange){
-			if(JVSHandler->pSense == JvsIo::SenseState::NotConnected) {
-				GPIOHandler->SetMode(GpIo::PinMode::In);
-			} else {
-				GPIOHandler->SetMode(GpIo::PinMode::Out);
-				GPIOHandler->Write(GpIo::PinState::Low);
-			}
-			JVSHandler->pSenseChange = false;
-		}
 
 		if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
 			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
