@@ -63,7 +63,7 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	for (uint8_t c : buffer) {
 		std::printf(" %02X", c);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 
@@ -104,7 +104,7 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 	for (uint8_t c : buffer) {
 		std::printf(" %02X", c);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 	return Status::Okay;

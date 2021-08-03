@@ -404,27 +404,23 @@ uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
 	return value;
 }
 
-JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
+JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer, uint8_t current_command)
 {
 	// First, read the sync byte
 	if (GetByte(buffer) != SYNC_BYTE) { // Do not unescape the sync-byte!
-#ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!\n";
-#endif
 		return Status::SyncError;
 	}
 
 	uint8_t target = GetEscapedByte(buffer);
-	if (target != TARGET_BROADCAST && target != DeviceID) {
+	if (target != TARGET_MASTER) {
 		return Status::WrongTarget;
 	}
 
 	// Miscount can happen if we read too fast or we start *after* master already has a slave.
 	uint8_t count = GetEscapedByte(buffer);
 	if (count != buffer.size()) {
-#ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
-#endif
 		return Status::CountError;
 	}
 
@@ -445,13 +441,28 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	uint8_t packet_checksum = GetEscapedByte(buffer);
 
 	// Verify checksum - skip packet if invalid
-	ResponseBuffer.clear();
+	if (!ResponseBuffer.empty()) {
+		ResponseBuffer.clear();
+	}
+	
 	if (packet_checksum != actual_checksum) {
-		ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
+		//ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
 		return Status::SumError;
 	}
 
-	HandlePacket(packet);
+
+	
+	std::printf("0x70: %02X / 0x%02X: %02X | ", packet[0], current_command, packet[1]);
+
+	if (packet[1] == JvsReportCode::Handled) {
+		for (uint8_t i = 2; i != packet.size(); i++) {
+			std::printf(" %02X", packet[i]);
+		}
+	}
+
+	std::cout << "\n";
+
+	//HandlePacket(packet);
 
 	return Status::Okay;
 }
@@ -472,27 +483,24 @@ void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 	SendByte(buffer, value);
 }
 
-JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, std::vector<uint8_t> &commands)
+JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, uint8_t current_command)
 {
-	//ResponseBuffer.emplace_back(0x70);
-	//ResponseBuffer.emplace_back(0x00);
+	ResponseBuffer.emplace_back(0x70); // NAMCO
+	ResponseBuffer.emplace_back(current_command);
 
 	// This shouldn't happen...
 	//if (ResponseBuffer.empty()) {
 	//	return Status::EmptyResponse;
 	//}
 
-	std::copy(commands.begin(), commands.end(), std::back_inserter(ResponseBuffer));
-
 	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
 	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
-	//SendEscapedByte(buffer, TARGET_MASTER);
 	SendEscapedByte(buffer, TARGET_BROADCAST); // Target IO board should reply to *all* broadcast requests.
 	SendEscapedByte(buffer, (uint8_t)ResponseBuffer.size() + 1);
 
-	// Calculate the checksum, normally you would add the target, but we only talk to TARGET_MASTER
-	uint8_t packet_checksum = (uint8_t)ResponseBuffer.size() + 1;
+	// Calculate the checksum
+	uint8_t packet_checksum = (uint8_t)ResponseBuffer.size() + 1 + TARGET_BROADCAST;
 
 	// Encode the payload data
 	for (uint8_t n : ResponseBuffer) {
@@ -503,7 +511,9 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, std::vector<uint8_
 	// Write the checksum to the last byte
 	SendEscapedByte(buffer, packet_checksum);
 
-	ResponseBuffer.clear();
+	if (!ResponseBuffer.empty()) {
+		ResponseBuffer.clear();
+	}
 
 #ifdef DEBUG_JVS_PACKETS
 	std::cout << "JvsIo::SendPacket:";

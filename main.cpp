@@ -39,7 +39,7 @@ void sig_handle(int sig) {
 }
 
 // TODO: Replace with ini setup
-static const std::string dev{"/dev/ttyUSB0"};
+static const std::string dev{"/dev/ttyS0"};
 
 int main()
 {
@@ -51,8 +51,8 @@ int main()
 
 	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev.c_str()));
 	if (!SerialHandler->IsInitialized) {
-		std::cerr << "Coudln't initiate the serial controller.\n";
-		return 1;
+		//std::cerr << "Coudln't initiate the serial controller.\n";
+		//return 1;
 	}
 
 	JvsIo::Status jvsStatus;
@@ -61,26 +61,25 @@ int main()
 	std::vector<uint8_t> SerialBuffer{};
 	SerialBuffer.reserve(512);
 
-	std::vector<uint8_t> commands{0x70, 0x01, 0x00, 0x00};
-
 	while (running) {
-		std::this_thread::sleep_for(delay);
-
-		if (!SerialBuffer.empty()) {
-			SerialBuffer.clear();
-		}
-
-		JVSHandler->SendPacket(SerialBuffer, commands);
-		SerialHandler->Write(SerialBuffer);
-
-		while (true) {
-			serialStatus = SerialHandler->Read(SerialBuffer);
-			if (serialStatus != SerIo::Status::Okay) {
-				std::this_thread::sleep_for(delay);
-				continue;
+		for (int i = 0; i != 0x100; i++) {
+			if (!SerialBuffer.empty()) {
+				SerialBuffer.clear();
 			}
-			break;
+			JVSHandler->SendPacket(SerialBuffer, i);
+			SerialHandler->Write(SerialBuffer);
+			while (true) {
+				serialStatus = SerialHandler->Read(SerialBuffer);
+				if (serialStatus != SerIo::Status::Okay) {
+					std::this_thread::sleep_for(delay);
+					continue;
+				}
+				break;
+			}
+			jvsStatus = JVSHandler->ReceivePacket(SerialBuffer, i);
 		}
+
+		running = false;
 
 		// TODO: Process the received packet into something more readable.
 
