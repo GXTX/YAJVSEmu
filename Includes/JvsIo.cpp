@@ -337,6 +337,81 @@ uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 	return 3;
 }
 
+uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
+{
+	enum Command {
+		Read = 0x01,
+		ReadProgramDate = 0x02,
+		DipStatus = 0x03,
+		UNK_04 = 0x04,
+		UNK_18 = 0x18,
+	};
+
+	uint8_t subcommand = data[1];
+
+	switch (subcommand) {
+		case Read: // Read 8 bytes of on-board memory of the device, pad with FF's.
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			{
+				uint16_t read_address = (data[2] << 8) | data[3];
+
+				for (uint8_t i = 0; i != 8; i++){
+					ResponseBuffer.emplace_back(0xFF);
+				}
+			}
+			return 3;
+		case ReadProgramDate: // Appears to be program date, send back what was dumped from my FCA.
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			{
+				static const std::vector<uint8_t> program_date{0x19, 0x98, 0x10, 0x26, 0x12, 0x00, 0x00, 0x00};
+				std::copy(program_date.begin(), program_date.end(), std::back_inserter(ResponseBuffer));
+			}
+			return 1;
+		case DipStatus: // default state is "true" with /real/ being "off"
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			{
+				bool dip[6] = {true, true, true, true, true, true}; //default state on, real "off"
+				uint8_t value{};
+				value |= dip[5] ? 1 << 7 : 0; //dip5 in real "on" state causes MCU to not boot
+				value |= dip[4] ? 1 << 6 : 0;
+				value |= dip[3] ? 1 << 5 : 0;
+				value |= dip[2] ? 1 << 4 : 0;
+				value |= dip[1] ? 1 << 3 : 0;
+				value |= dip[0] ? 1 << 2 : 0;
+				value |= 1 << 1; // unknown
+				value |= 1 << 0; // unknown
+
+				ResponseBuffer.emplace_back(value);
+			}
+			return 1;
+		case UNK_04: // Not sure? Appears to always return FF FF
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			{
+				ResponseBuffer.emplace_back(0xFF);
+				ResponseBuffer.emplace_back(0xFF);
+			}
+			return 1;
+		case UNK_18: // No idea, comes in with 4 params
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			{
+				// Wangan Midnight Tune 2B sends: 70 18 50 4C 14 FE
+				// FCA reply: E0 00 04 01 01 01 07
+				// This implies there's 2 subcommands being ran
+				// but a subcommand dump of 0x00-0xFF only gives us the
+				// commands in the Command{} enum.
+				ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			}
+			return 5;
+		default:
+			// TODO: We really should update the StatusCode instead of just letting the master assume we're handling it.
+			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			return 1;
+	}
+
+	// Unreachable
+	return 1;
+}
+
 void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 {
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
@@ -372,6 +447,7 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;
 			case 0x32: i += Jvs_Command_32_GeneralPurposeOutput(command_data); break;
 			case 0x35: i += Jvs_Command_35_CoinAdditionOutput(command_data); break;
+			case 0x70: i += Jvs_Command_70_NamcoSpecific(command_data); break;
 			default:
 				// Overwrite the verly-optimistic JvsStatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.

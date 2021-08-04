@@ -271,6 +271,7 @@ private:
 	uint8_t Jvs_Command_30_CoinSubtractionOutput(uint8_t *data);
 	uint8_t Jvs_Command_32_GeneralPurposeOutput(uint8_t *data);
 	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
+	uint8_t Jvs_Command_70_NamcoSpecific(uint8_t *data);
 
 	uint8_t DeviceID{}; // Device ID assigned by running title
 	std::vector<uint8_t> ResponseBuffer{}; // Command Response
