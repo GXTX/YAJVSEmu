@@ -404,25 +404,34 @@ uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
 	return value;
 }
 
-JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer, uint8_t current_command)
+JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer, uint16_t current_command)
 {
 	// First, read the sync byte
-	if (GetByte(buffer) != SYNC_BYTE) { // Do not unescape the sync-byte!
-		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!\n";
+	uint8_t sync = GetByte(buffer);
+	if (sync != SYNC_BYTE) { // Do not unescape the sync-byte!
+#ifdef DEBUG_JVS_PACKETS
+		//std::cout << "JvsIo::ReceivePacket:";
+		//for (uint8_t n : buffer) {
+		//	std::printf(" %02X", n);
+		//}
+		//std::cout << "\n";
+#endif
+		std::cerr << "\n\nJvsIo::ReceivePacket: Missing sync byte!\n\n";
 		return Status::SyncError;
 	}
 
 	uint8_t target = GetEscapedByte(buffer);
 	if (target != TARGET_MASTER) {
+		std::cerr << "JvsIo::ReceivePacket: Wrong target.";
 		return Status::WrongTarget;
 	}
 
 	// Miscount can happen if we read too fast or we start *after* master already has a slave.
 	uint8_t count = GetEscapedByte(buffer);
-	if (count != buffer.size()) {
-		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
-		return Status::CountError;
-	}
+	//if (count != buffer.size()) {
+	//	std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
+	//	return Status::CountError;
+	//}
 
 	// Calculate the checksum
 	uint8_t actual_checksum = target + count;
@@ -441,28 +450,25 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer, uint8_t current
 	uint8_t packet_checksum = GetEscapedByte(buffer);
 
 	// Verify checksum - skip packet if invalid
-	if (!ResponseBuffer.empty()) {
-		ResponseBuffer.clear();
-	}
 	
 	if (packet_checksum != actual_checksum) {
 		//ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
+		std::cerr << "JvsIo::ReceivePacket: Checksum error!\n";
 		return Status::SumError;
 	}
 
-
-	
-	std::printf("0x70: %02X / 0x%02X: %02X | ", packet[0], current_command, packet[1]);
-
-	if (packet[1] == JvsReportCode::Handled) {
-		for (uint8_t i = 2; i != packet.size(); i++) {
-			std::printf(" %02X", packet[i]);
-		}
+#ifdef DEBUG_JVS_PACKETS
+	//std::cout << "JvsIo::ReceivePacket:";
+	//std::printf(" 0x70 0x%02X:", current_command & 0xFF);
+	for (uint8_t n = 2; n != packet.size(); n++) { // skip status bytes
+		std::printf(" %02X", packet.at(n));
 	}
+	//std::cout << "\n";
+#endif
 
-	std::cout << "\n";
-
-	//HandlePacket(packet);
+	if (!ResponseBuffer.empty()) {
+		ResponseBuffer.clear();
+	}
 
 	return Status::Okay;
 }
@@ -483,15 +489,13 @@ void JvsIo::SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value)
 	SendByte(buffer, value);
 }
 
-JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, uint8_t current_command)
+JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, uint16_t current_command)
 {
-	ResponseBuffer.emplace_back(0x70); // NAMCO
-	ResponseBuffer.emplace_back(current_command);
-
-	// This shouldn't happen...
-	//if (ResponseBuffer.empty()) {
-	//	return Status::EmptyResponse;
-	//}
+	// Fill in our required data to the Jvs buffer
+	ResponseBuffer.push_back(0x70);
+	ResponseBuffer.push_back(0x01); //read
+	ResponseBuffer.push_back((current_command >> 8) & 0xFF);
+	ResponseBuffer.push_back(current_command & 0xFF);
 
 	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
@@ -516,11 +520,11 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer, uint8_t current_co
 	}
 
 #ifdef DEBUG_JVS_PACKETS
-	std::cout << "JvsIo::SendPacket:";
-	for (uint8_t n : buffer) {
-		std::printf(" %02X", n);
-	}
-	std::cout << "\n";
+	//std::cout << "JvsIo::SendPacket:";
+	//for (uint8_t n : buffer) {
+	//	std::printf(" %02X", n);
+	//}
+	//std::cout << "\n";
 #endif
 
 	return Status::Okay;

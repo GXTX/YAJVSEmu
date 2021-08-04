@@ -29,7 +29,8 @@
 #include "SerIo.h"
 
 
-auto delay{std::chrono::microseconds(5)};
+//auto delay{std::chrono::microseconds(250)};
+auto delay{std::chrono::milliseconds(5)};
 std::atomic<bool> running{true};
 
 void sig_handle(int sig) {
@@ -39,7 +40,7 @@ void sig_handle(int sig) {
 }
 
 // TODO: Replace with ini setup
-static const std::string dev{"/dev/ttyS0"};
+static const std::string dev{"/dev/ttyUSB0"};
 
 int main()
 {
@@ -62,7 +63,8 @@ int main()
 	SerialBuffer.reserve(512);
 
 	while (running) {
-		for (int i = 0; i != 0x100; i++) {
+		for (int i = 0; i < 0xFFFF; i += 8) {
+			std::this_thread::sleep_for(delay);
 			if (!SerialBuffer.empty()) {
 				SerialBuffer.clear();
 			}
@@ -77,30 +79,14 @@ int main()
 				break;
 			}
 			jvsStatus = JVSHandler->ReceivePacket(SerialBuffer, i);
+			if (jvsStatus != JvsIo::Status::Okay) {
+				std::cerr << "Killing at dec: " << i << "\n";
+				running = false;
+				break;
+			}
 		}
 
 		running = false;
-
-		// TODO: Process the received packet into something more readable.
-
-		//while (serialStatus = SerialHandler->Read(SerialBuffer) != SerIo::Status::Okay) {
-		//	std::this_thread::sleep_for(delay);
-		//	continue;
-		//}
-
-		//serialStatus = SerialHandler->Read(SerialBuffer);
-		//if (serialStatus != SerIo::Status::Okay) {
-		//	continue;
-		//}
-
-
-
-		//jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
-
-		//if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
-		//	jvsStatus = JVSHandler->SendPacket(SerialBuffer, commands);
-		//	SerialHandler->Write(SerialBuffer);
-		//}
 	}
 
 	return 0;
