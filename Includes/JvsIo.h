@@ -255,7 +255,9 @@ private:
 
 	// Commands
 	// These return the additional param bytes used
+#if 0
 	uint8_t Jvs_Command_F0_Reset(uint8_t *data);
+#endif
 	uint8_t Jvs_Command_F1_SetDeviceId(uint8_t *data);
 	uint8_t Jvs_Command_10_GetBoardId();
 	uint8_t Jvs_Command_11_GetCommandFormat();
@@ -275,6 +277,7 @@ private:
 
 	uint8_t DeviceID{}; // Device ID assigned by running title
 	std::vector<uint8_t> ResponseBuffer{}; // Command Response
+	std::vector<uint8_t> ProcessedPacket{}; // Hold the incoming packet after we've processed
 
 	// Device info
 	uint8_t CommandFormatRevision{};

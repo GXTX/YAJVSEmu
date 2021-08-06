@@ -41,8 +41,10 @@ JvsIo::JvsIo(SenseState sense)
 	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.00";
 
 	ResponseBuffer.reserve(512);
+	ProcessedPacket.reserve(512);
 }
 
+#if 0
 uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 {
 	uint8_t ensure_reset = data[1];
@@ -55,6 +57,7 @@ uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
 	}
 	return 1;
 }
+#endif
 
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
@@ -149,22 +152,20 @@ uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 {
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
-	std::string masterId;
+	std::string masterID;
 
 	// Skip first 2 bytes, max size is 100, break on null.
 	for (int i = 0; i != 100; i++) {
 		if (data[i+2] == 0x00)
 			break;
-		masterId.push_back(data[i+2]);
+		masterID.push_back(data[i+2]);
 	}
 
 #ifdef DEBUG_CONVEY_ID
-	std::cout << "JvsIo::Jvs_Command_15_ConveyId: " <<
-		std::printf("%s", masterId.c_str()) <<
-		std::endl;
+	std::cout << "JvsIo::Jvs_Command_15_ConveyId: " << std::printf("%s\n", masterID.c_str());
 #endif
 
-	return 2 + masterId.size();
+	return 1 + masterID.size();
 }
 
 uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
@@ -314,7 +315,7 @@ uint8_t JvsIo::Jvs_Command_32_GeneralPurposeOutput(uint8_t *data)
 			std::printf(" %s", gpo_pin.c_str());
 		}
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 	return 1 + banks;
@@ -398,13 +399,13 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 				// FCA reply: E0 00 04 01 01 01 07
 				// This implies there's 2 subcommands being ran
 				// but a subcommand dump of 0x00-0xFF only gives us the
-				// commands in the Command{} enum.
+				// commands in the Command{} enum. Is it possible the actual
+				// response is 0x01 and not a status byte?
 				ResponseBuffer.emplace_back(JvsReportCode::Handled);
 			}
 			return 5;
 		default:
-			// TODO: We really should update the StatusCode instead of just letting the master assume we're handling it.
-			ResponseBuffer.emplace_back(JvsReportCode::Handled);
+			// TODO: We really should update the StatusCode.
 			return 1;
 	}
 
@@ -412,6 +413,7 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 	return 1;
 }
 
+// TODO: Refactor F0 & F1 for better custom handling.
 void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 {
 	// It's possible for a JVS packet to contain multiple commands, so we must iterate through it
@@ -420,19 +422,29 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 	for (size_t i = 0; i != packet.size(); i++) {
 		uint8_t *command_data = &packet.at(i);
 		switch (packet.at(i)) {
-			// Broadcast Commands
-			case 0xF0: i += Jvs_Command_F0_Reset(command_data); break;
-			case 0xF1:
-				if (DeviceID != 0) {
-					// TODO: Refactor so we can just ignore things like this, for now
-					// clear out the buffer so we cause a check in JvsIo::SendPacket to
-					// fail so we don't send out a broken packet.
-					ResponseBuffer.clear();
-					return;
+			case 0xF0:
+				{
+					// We should never reply to this
+					uint8_t ensure_reset = command_data[1];
+
+					if (ensure_reset == 0xD9) {
+						pSense = SenseState::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
+						pSenseChange = true;
+						DeviceID = 0;
+					}
+					ResponseBuffer.clear(); // Clear buffer so we don't reply
 				}
-				i += Jvs_Command_F1_SetDeviceId(command_data);
+			return;
+			case 0xF1:
+				{
+					// If we already have an ID we must *not* respond
+					if (DeviceID != 0) {
+						ResponseBuffer.clear();
+						return;
+					}
+					i += Jvs_Command_F1_SetDeviceId(command_data);
+				}
 			break;
-			// Init Commands
 			case 0x10: i += Jvs_Command_10_GetBoardId(); break;
 			case 0x11: i += Jvs_Command_11_GetCommandFormat(); break;
 			case 0x12: i += Jvs_Command_12_GetJvsRevision(); break;
@@ -451,9 +463,8 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			default:
 				// Overwrite the verly-optimistic JvsStatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.
-				ResponseBuffer[0] = JvsStatusCode::UnsupportedCommand;
-				std::printf("JvsIo::HandlePacket: Unhandled Command %02X", packet[i]);
-				std::cout << std::endl;
+				ResponseBuffer.at(0) = JvsStatusCode::UnsupportedCommand;
+				std::cerr << "JvsIo::HandlePacket: Unhandled command 0x" << std::hex << static_cast<int>(packet.at(i)) << "\n";
 				return;
 		}
 	}
@@ -509,11 +520,10 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 
 	// Decode the payload data
 	// TODO: don't put in another vector just to send off
-	std::vector<uint8_t> packet;
-	packet.reserve(512);
+	ProcessedPacket.clear();
 	for (int i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
-		packet.emplace_back(value);
+		ProcessedPacket.emplace_back(value);
 		actual_checksum += value;
 	}
 
@@ -521,13 +531,24 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	uint8_t packet_checksum = GetEscapedByte(buffer);
 
 	// Verify checksum - skip packet if invalid
-	ResponseBuffer.clear();
 	if (packet_checksum != actual_checksum) {
 		ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
 		return Status::SumError;
 	}
 
-	HandlePacket(packet);
+#ifdef DEBUG_JVS_PACKETS
+	std::cout << "JvsIo::ReceivePacket:";
+	for (uint8_t n : ProcessedPacket) {
+		std::printf(" %02X", n);
+	}
+	std::cout << "\n";
+#endif
+
+	// TODO: Handle if we receive a request to retransmit the last packet.
+	// Clear the response buffer before we continue.
+	ResponseBuffer.clear();
+
+	HandlePacket(ProcessedPacket);
 
 	return Status::Okay;
 }
@@ -559,10 +580,10 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 	// Send the header bytes
 	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
 	SendEscapedByte(buffer, TARGET_MASTER);
-	SendEscapedByte(buffer, (uint8_t)ResponseBuffer.size() + 1);
+	SendEscapedByte(buffer, static_cast<uint8_t>(ResponseBuffer.size()) + 1);
 
 	// Calculate the checksum, normally you would add the target, but we only talk to TARGET_MASTER
-	uint8_t packet_checksum = (uint8_t)ResponseBuffer.size() + 1;
+	uint8_t packet_checksum = static_cast<uint8_t>(ResponseBuffer.size()) + 1;
 
 	// Encode the payload data
 	for (uint8_t n : ResponseBuffer) {
@@ -573,14 +594,12 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 	// Write the checksum to the last byte
 	SendEscapedByte(buffer, packet_checksum);
 
-	ResponseBuffer.clear();
-
 #ifdef DEBUG_JVS_PACKETS
 	std::cout << "JvsIo::SendPacket:";
 	for (uint8_t n : buffer) {
 		std::printf(" %02X", n);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 	return Status::Okay;

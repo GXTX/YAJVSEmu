@@ -63,17 +63,16 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	for (uint8_t c : buffer) {
 		std::printf(" %02X", c);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
-
 
 	int ret = sp_nonblocking_write(Port, buffer.data(), buffer.size());
 
 	if (ret <= 0) {
 		return Status::WriteError;
-	} else if (ret != (int)buffer.size()) {
+	} else if (ret != static_cast<int>(buffer.size())) {
 #ifdef DEBUG_SERIAL
-		std::printf("SerIo::Write: Only wrote %02X of %02X to the port!\n", ret, (int)buffer.size());
+		std::cerr << "SerIo::Write: Only wrote " << std::hex << ret << " of " << std::hex << static_cast<int>(buffer.size()) << " to the port!\n";
 #endif
 		return Status::WriteError;
 	}
@@ -89,9 +88,11 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 		return Status::ZeroSizeError;
 	} else if (bytes < 0) {
 		return Status::ReadError;
+	} else if (bytes < 5) {
+		return Status::ReadError; // TODO: Dirty hack
 	}
 
-	buffer.resize(bytes);
+	buffer.resize(static_cast<size_t>(bytes));
 
 	int ret = sp_nonblocking_read(Port, buffer.data(), buffer.size());
 
@@ -104,7 +105,7 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 	for (uint8_t c : buffer) {
 		std::printf(" %02X", c);
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 #endif
 
 	return Status::Okay;

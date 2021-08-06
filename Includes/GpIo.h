@@ -53,6 +53,8 @@ public:
 
 	void SetMode(PinMode state);
 	void Write(PinState state);
+
+	void Loop();
 private:
 };
 

@@ -38,6 +38,11 @@ GpIo::~GpIo()
 	bcm2835_close();
 }
 
+void GpIo::Loop()
+{
+	// TODO: decouple GpIo manipulation from main thread loop.
+}
+
 void GpIo::SetMode(PinMode state) 
 {
 	if (state == PinMode::In) {
