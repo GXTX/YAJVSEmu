@@ -170,7 +170,7 @@ uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 {
-	static jvs_switch_player_inputs_t default_switch_player_input;
+	static jvs_switch_player_input default_switch_player_input;
 	uint8_t nr_switch_players = data[1];
 	uint8_t bytesPerSwitchPlayerInput = data[2];
 
@@ -181,7 +181,7 @@ uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 	for (int i = 0; i != nr_switch_players; i++) {
 		for (int j = 0; j != bytesPerSwitchPlayerInput; j++) {
 			// If a title asks for more switch player inputs than we support, pad with dummy data
-			jvs_switch_player_inputs_t &switch_player_input = (i >= JVS_MAX_PLAYERS) ? default_switch_player_input : Inputs.switches.player[i];
+			jvs_switch_player_input &switch_player_input = (i >= JVS_MAX_PLAYERS) ? default_switch_player_input : Inputs.switches.player[i];
 			uint8_t value
 				= (j == 0) ? switch_player_input.GetByte0()
 				: (j == 1) ? switch_player_input.GetByte1()
@@ -195,7 +195,7 @@ uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 {
-	static jvs_coin_slots_t default_coin_slot;
+	static jvs_coin_slot default_coin_slot;
 	uint8_t nr_coin_slots = data[1];
 	
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
@@ -204,7 +204,7 @@ uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 		const uint8_t bytesPerCoinSlot = 2;
 		for (int j = 0; j != bytesPerCoinSlot; j++) {
 			// If a title asks for more coin slots than we support, pad with dummy data
-			jvs_coin_slots_t &coin_slot = (i >= JVS_MAX_COINS) ? default_coin_slot : Inputs.coins[i];
+			jvs_coin_slot &coin_slot = (i >= JVS_MAX_COINS) ? default_coin_slot : Inputs.coins[i];
 			uint8_t value
 				= (j == 0) ? coin_slot.GetByte0()
 				: (j == 1) ? coin_slot.GetByte1()
@@ -218,7 +218,7 @@ uint8_t JvsIo::Jvs_Command_21_ReadCoinInputs(uint8_t *data)
 
 uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 {
-	static jvs_analog_input_t default_analog;
+	static jvs_analog_input default_analog;
 	uint8_t nr_analog_inputs = data[1];
 
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
@@ -227,7 +227,7 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 		const uint8_t bytesPerAnalogInput = 2;
 		for (int j = 0; j != bytesPerAnalogInput; j++) {
 			// If a title asks for more analog input than we support, pad with dummy data
-			jvs_analog_input_t &analog_input = (i >= JVS_MAX_ANALOG) ? default_analog : Inputs.analog[i];
+			jvs_analog_input &analog_input = (i >= JVS_MAX_ANALOG) ? default_analog : Inputs.analog[i];
 			uint8_t value
 				= (j == 0) ? analog_input.GetByte0()
 				: (j == 1) ? analog_input.GetByte1()
@@ -242,7 +242,7 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 // TODO: Verify with a test case...
 uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 {
-	static jvs_screen_pos_input_t default_screen_pos;
+	static jvs_screen_pos_input default_screen_pos;
 	uint8_t nr_screen_inputs = data[1];
 
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
@@ -251,7 +251,7 @@ uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 		const uint8_t bytesPerScreenInput = 4;
 		for (int j = 0; j != bytesPerScreenInput; j++) {
 			// If a title asks for more screen channels than we support, pad with dummy data
-			jvs_screen_pos_input_t &screen_pos_input = (i >= JVS_MAX_SCREEN_CHANNELS) ? default_screen_pos : Inputs.screen[i];
+			jvs_screen_pos_input &screen_pos_input = (i >= JVS_MAX_SCREEN_CHANNELS) ? default_screen_pos : Inputs.screen[i];
 			uint8_t value
 				= (j == 0) ? screen_pos_input.GetByte0()
 				: (j == 1) ? screen_pos_input.GetByte1()
@@ -269,7 +269,7 @@ uint8_t JvsIo::Jvs_Command_25_ReadScreenPosition(uint8_t *data)
 uint8_t JvsIo::Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data)
 {
 	uint8_t bytesPerSwitchGeneralInput = data[1]; //?
-	jvs_switch_general_inputs_t &switch_general_input = Inputs.switches.general;
+	jvs_switch_general_input &switch_general_input = Inputs.switches.general;
 
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 

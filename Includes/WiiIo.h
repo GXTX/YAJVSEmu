@@ -35,17 +35,17 @@
 
 #include "JvsIo.h"
 
-typedef struct {
+struct wii_remote{
 	uint8_t id{};
 	int fd{};
 	std::string controller{};
 	xwii_iface *interface{nullptr};
-} wiiremote;
+};
 
 class WiiIo
 {
 public:
-	WiiIo(uint8_t players, jvs_input_states_t *jvsInputs);
+	WiiIo(uint8_t players, jvs_input_states *jvsInputs);
 	~WiiIo();
 
 	void Loop();
@@ -55,8 +55,8 @@ private:
 		ScreenPos,
 	};
 
-	jvs_input_states_t *Inputs{nullptr};
-	std::vector<wiiremote> Player{};
+	jvs_input_states *Inputs{nullptr};
+	std::vector<wii_remote> Player{};
 	xwii_event event;
 
 	void ButtonPressHandler(int player, xwii_event_key *button, xwii_iface *fd);

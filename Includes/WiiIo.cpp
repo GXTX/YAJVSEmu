@@ -23,7 +23,7 @@
 
 //#define DEBUG_IR_POS
 
-WiiIo::WiiIo(uint8_t players, jvs_input_states_t *jvsInputs)
+WiiIo::WiiIo(uint8_t players, jvs_input_states *jvsInputs)
 {
 	Inputs = jvsInputs;
 
@@ -49,7 +49,7 @@ WiiIo::WiiIo(uint8_t players, jvs_input_states_t *jvsInputs)
 	// NOTE: There is a bug with xwiimote where Nyko controllers wont always enable their IR interface,
 	// so we need to make sure this is opened. It's possible to stall the thread and attempt to connect
 	// forever but it's *obviously* imporant that we have access to IR.
-	for (wiiremote &remote : Player) {
+	for (wii_remote &remote : Player) {
 		while (true) {
 			std::puts("WiiIo::WiiIo: Connecting Wii Remote...");
 			xwii_iface_new(&remote.interface, remote.controller.c_str());
@@ -67,7 +67,7 @@ WiiIo::WiiIo(uint8_t players, jvs_input_states_t *jvsInputs)
 
 WiiIo::~WiiIo()
 {
-	for (wiiremote &remote : Player) {
+	for (wii_remote &remote : Player) {
 		xwii_iface_unref(remote.interface);
 	}
 }
@@ -75,7 +75,7 @@ WiiIo::~WiiIo()
 void WiiIo::Loop()
 {
 	std::vector<pollfd> fd;
-	for (wiiremote remote : Player) {
+	for (wii_remote remote : Player) {
 		fd.push_back({remote.fd, POLLIN, 0});
 	}
 
@@ -85,7 +85,7 @@ void WiiIo::Loop()
 			std::puts("WiiIo::Loop: Can't poll the fd!");
 			break;
 		}
-		for (wiiremote &remote : Player) {
+		for (wii_remote &remote : Player) {
 			int wiiret = xwii_iface_dispatch(remote.interface, &event, sizeof(event));
 			if (wiiret < 0 && wiiret != -EAGAIN) {
 				std::puts("WiiIo::Loop: Failed to read fd queue.");
@@ -162,7 +162,6 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 			default: break;
 		}
 	} else {
-		Inputs->screen[player].position = finalx << 16;
-		Inputs->screen[player].position |= finaly;
+		Inputs->screen[player].position = (finalx << 16) | finaly;
 	}
 }

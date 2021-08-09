@@ -35,7 +35,23 @@
 #define JVS_MAX_SCREEN_CHANNELS (1)
 #define JVS_MAX_GPO (6)
 
-typedef struct {
+struct jvs_switch_system_input {
+	bool test{};
+	bool tilt_1{};
+	bool tilt_2{};
+	bool tilt_3{};
+
+	uint8_t GetByte0() {
+		uint8_t value{};
+		value |= test   ? 1 << 7 : 0;
+		value |= tilt_1 ? 1 << 6 : 0;
+		value |= tilt_2 ? 1 << 5 : 0;
+		value |= tilt_3 ? 1 << 4 : 0;
+		return value;
+	}
+};
+
+struct jvs_switch_player_input{
 	bool start{};
 	bool service{};
 	bool up{};
@@ -66,9 +82,9 @@ typedef struct {
 		value |= button[6] ? 1 << 3 : 0;
 		return value;
 	}
-} jvs_switch_player_inputs_t;
+};
 
-typedef struct {
+struct jvs_switch_general_input {
 	bool button[16]{};
 
 	uint8_t GetByte0() {
@@ -96,31 +112,15 @@ typedef struct {
 		value |= button[15] ? 1 << 0 : 0;
 		return value;
 	}
-} jvs_switch_general_inputs_t;
+};
 
-typedef struct {
-	bool test{};
-	bool tilt_1{};
-	bool tilt_2{};
-	bool tilt_3{};
+struct jvs_switch_inputs {
+	jvs_switch_system_input system;
+	jvs_switch_player_input player[JVS_MAX_PLAYERS];
+	jvs_switch_general_input general;
+};
 
-	uint8_t GetByte0() {
-		uint8_t value{};
-		value |= test   ? 1 << 7 : 0;
-		value |= tilt_1 ? 1 << 6 : 0;
-		value |= tilt_2 ? 1 << 5 : 0;
-		value |= tilt_3 ? 1 << 4 : 0;
-		return value;
-	}
-} jvs_switch_system_inputs_t;
-
-typedef struct {
-	jvs_switch_system_inputs_t system;
-	jvs_switch_player_inputs_t player[JVS_MAX_PLAYERS];
-	jvs_switch_general_inputs_t general;
-} jvs_switch_inputs_t;
-
-typedef struct {
+struct jvs_analog_input {
 	uint16_t value{};
 
 	uint8_t GetByte0() {
@@ -130,9 +130,9 @@ typedef struct {
 	uint8_t GetByte1() {
 		return value & 0xFF;
 	}
-} jvs_analog_input_t;
+};
 
-typedef struct {
+struct jvs_coin_slot {
 	enum CoinStatus{
 		Normal = 0,
 		Jammed = 1,
@@ -150,9 +150,9 @@ typedef struct {
 	uint8_t GetByte1() {
 		return coins & 0xFF;
 	}
-} jvs_coin_slots_t;
+};
 
-typedef struct {
+struct jvs_screen_pos_input {
 	uint32_t position{};
 
 	uint8_t GetByte0() {
@@ -170,14 +170,14 @@ typedef struct {
 	uint8_t GetByte3() {
 		return position & 0xFF;
 	}
-} jvs_screen_pos_input_t;
+};
 
-typedef struct {
-	jvs_switch_inputs_t switches;
-	jvs_analog_input_t analog[JVS_MAX_ANALOG];
-	jvs_coin_slots_t coins[JVS_MAX_COINS];
-	jvs_screen_pos_input_t screen[JVS_MAX_SCREEN_CHANNELS];
-} jvs_input_states_t;
+struct jvs_input_states {
+	jvs_switch_inputs switches;
+	jvs_analog_input analog[JVS_MAX_ANALOG];
+	jvs_coin_slot coins[JVS_MAX_COINS];
+	jvs_screen_pos_input screen[JVS_MAX_SCREEN_CHANNELS];
+};
 
 class JvsIo
 {
@@ -199,7 +199,7 @@ public:
 
 	SenseState pSense{SenseState::NotConnected};
 	bool pSenseChange{};
-	jvs_input_states_t Inputs;
+	jvs_input_states Inputs;
 
 	JvsIo(SenseState sense);
 

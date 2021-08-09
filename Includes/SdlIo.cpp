@@ -21,7 +21,7 @@
 
 #include "SdlIo.h"
 
-SdlIo::SdlIo(int deviceIndex, jvs_input_states_t *jvsInputs)
+SdlIo::SdlIo(int deviceIndex, jvs_input_states *jvsInputs)
 {
 	Inputs = jvsInputs;
 

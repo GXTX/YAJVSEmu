@@ -34,7 +34,7 @@
 class SdlIo
 {
 public:
-	SdlIo(int deviceIndex, jvs_input_states_t *jvsInputs);
+	SdlIo(int deviceIndex, jvs_input_states *jvsInputs);
 	~SdlIo();
 
 	void Loop();
@@ -44,7 +44,7 @@ private:
 		Trigger,
 	};
 
-	jvs_input_states_t *Inputs{nullptr};
+	jvs_input_states *Inputs{nullptr};
 	SDL_GameController *controller{nullptr};
 	SDL_Event event;
 

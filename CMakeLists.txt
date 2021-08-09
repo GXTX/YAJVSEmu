@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(YAJVSEmu)
+#set(CMAKE_CXX_COMPILER "clang++")
+
+project(YAJVSEmu LANGUAGES CXX)
 
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -20,9 +22,7 @@ else()
 	set(GIT_VERSION "unknown")
 endif()
 
-configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h" @ONLY
-	NEWLINE_STYLE LF
-)
+configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h" @ONLY NEWLINE_STYLE LF)
 
 include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${XWII_INCLUDE_DIRS} ${SERIAL_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/Includes)
 
@@ -35,9 +35,7 @@ add_executable(${PROJECT_NAME}
 	Includes/WiiIo.cpp
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-	CXX_STANDARD 17
-)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -march=native -Wsign-conversion -Wall -Wextra -Wpedantic)
 
