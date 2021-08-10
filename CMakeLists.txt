@@ -28,6 +28,7 @@ include_directories(${THREAD_INLCUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${XWII_INCLUDE_D
 
 add_executable(${PROJECT_NAME}
 	main.cpp
+	Includes/Setup.cpp
 	Includes/JvsIo.cpp
 	Includes/SerIo.cpp
 	Includes/GpIo.cpp

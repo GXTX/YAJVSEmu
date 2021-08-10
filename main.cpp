@@ -30,6 +30,7 @@
 #include "GpIo.h"
 #include "SdlIo.h"
 #include "WiiIo.h"
+#include "Setup.hpp"
 #include "version.h"
 
 #ifdef REAL_TIME
@@ -46,9 +47,6 @@ void sig_handle(int sig) {
 		running = false;
 	}
 }
-
-// TODO: Replace with ini setup
-static const std::string dev{"/dev/ttyUSB0"};
 
 int main()
 {
@@ -80,26 +78,35 @@ int main()
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
 	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
 
-	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(dev.c_str()));
+	std::unique_ptr<SetupInfo> Setup (std::make_unique<SetupInfo>());
+
+	if (!Setup->IsFinished) {
+		std::cerr << "Unknown problem setting up input devices.\n";
+		return 1;
+	}
+
+	std::unique_ptr<SerIo> SerialHandler (std::make_unique<SerIo>(Setup->info.serial_port.c_str()));
 	if (!SerialHandler->IsInitialized) {
 		std::cerr << "Coudln't initiate the serial controller.\n";
 		return 1;
 	}
 
-	// Spawn lone SDL2 or WiiIo input thread.
-	// NOTE: There probably is no reason we can't have both of these running
-	//if (setup.sdlbackend) {
-		//std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(0, &JVSHandler->Inputs)).detach();
-	//}
-	//else {
-		//std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(1, &JVSHandler->Inputs)).detach();
-	//}
+	if (Setup->info.backend == Setup->info.SDL) {
+		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(Setup->info.device_index, &JVSHandler->Inputs)).detach();
+	} else if (Setup->info.backend == Setup->info.XWII) {
+		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(Setup->info.players, &JVSHandler->Inputs)).detach();
+	}
+
+	// Free
+	Setup.reset();
 
 	JvsIo::Status jvsStatus;
 	SerIo::Status serialStatus;
 
 	std::vector<uint8_t> SerialBuffer{};
 	SerialBuffer.reserve(512);
+
+	std::cout << "Running...\n";
 
 	while (running) {
 		if (!SerialBuffer.empty()) {
@@ -131,6 +138,8 @@ int main()
 
 		std::this_thread::sleep_for(delay);
 	}
+
+	std::cout << std::endl;
 
 	return 0;
 }

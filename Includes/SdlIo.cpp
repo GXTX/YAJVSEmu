@@ -39,9 +39,9 @@ SdlIo::SdlIo(int deviceIndex, jvs_input_states *jvsInputs)
 
 	controller = SDL_GameControllerOpen(deviceIndex);
 	if (controller == nullptr) {
-		std::cerr << "SdlIo::SdlIo: " << SDL_GetError();
+		std::cerr << "SdlIo::SdlIo: " << SDL_GetError() << "\n";
 	} else {
-		std::cout << "SdlIo::SdlIo: Connected " << SDL_JoystickNameForIndex(deviceIndex) << std::endl;
+		std::cout << "SdlIo::SdlIo: Connected " << SDL_JoystickNameForIndex(deviceIndex) << "\n";
 	}
 }
 

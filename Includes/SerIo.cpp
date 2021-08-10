@@ -94,7 +94,7 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 
 	buffer.resize(static_cast<size_t>(bytes));
 
-	int ret = sp_nonblocking_read(Port, buffer.data(), buffer.size());
+	int ret = sp_nonblocking_read(Port, &buffer[0], buffer.size());
 
 	if (ret <= 0) {
 		return Status::ReadError;
