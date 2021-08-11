@@ -420,8 +420,8 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 	ResponseBuffer.emplace_back(JvsStatusCode::StatusOkay); // Assume we'll handle the command just fine
 
 	for (size_t i = 0; i != packet.size(); i++) {
-		uint8_t *command_data = &packet.at(i);
-		switch (packet.at(i)) {
+		uint8_t *command_data = &packet[i];
+		switch (packet[i]) {
 			case 0xF0:
 				{
 					// We should never reply to this
@@ -463,17 +463,16 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			default:
 				// Overwrite the verly-optimistic JvsStatusCode::StatusOkay with Status::Unsupported command
 				// Don't process any further commands. Existing processed commands must still return their responses.
-				ResponseBuffer.at(0) = JvsStatusCode::UnsupportedCommand;
-				std::cerr << "JvsIo::HandlePacket: Unhandled command 0x" << std::hex << static_cast<int>(packet.at(i)) << "\n";
+				ResponseBuffer[0] = JvsStatusCode::UnsupportedCommand;
+				std::cerr << "JvsIo::HandlePacket: Unhandled command 0x" << std::hex << static_cast<int>(packet[i]) << "\n";
 				return;
 		}
 	}
 }
 
-// TODO: Slow
 uint8_t JvsIo::GetByte(std::vector<uint8_t> &buffer)
 {
-	uint8_t value = buffer.at(0);
+	uint8_t value = buffer[0];
 	buffer.erase(buffer.begin());
 
 	return value;
@@ -502,11 +501,11 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	}
 
 	uint8_t target = GetEscapedByte(buffer);
-	if (target != TARGET_BROADCAST && target != DeviceID) {
+	if (target != DeviceID && target != TARGET_BROADCAST) {
+		// Don't tell the user about this, in setups where there are multiple devices the output will be too noisy.
 		return Status::WrongTarget;
 	}
 
-	// Miscount can happen if we read too fast or we start *after* master already has a slave.
 	uint8_t count = GetEscapedByte(buffer);
 	if (count != buffer.size()) {
 #ifdef DEBUG_JVS_PACKETS
@@ -519,9 +518,8 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	uint8_t actual_checksum = target + count;
 
 	// Decode the payload data
-	// TODO: don't put in another vector just to send off
 	ProcessedPacket.clear();
-	for (int i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
+	for (uint8_t i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
 		uint8_t value = GetEscapedByte(buffer);
 		ProcessedPacket.emplace_back(value);
 		actual_checksum += value;
@@ -532,6 +530,9 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 
 	// Verify checksum - skip packet if invalid
 	if (packet_checksum != actual_checksum) {
+#ifdef DEBUG_JVS_PACKETS
+		std::cerr << "JvsIo::ReceivePacket: Miscalcuated checksum, notifying master.\n";
+#endif
 		ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
 		return Status::SumError;
 	}
@@ -544,7 +545,6 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	std::cout << "\n";
 #endif
 
-	// TODO: Handle if we receive a request to retransmit the last packet.
 	// Clear the response buffer before we continue.
 	ResponseBuffer.clear();
 
@@ -576,7 +576,6 @@ JvsIo::Status JvsIo::SendPacket(std::vector<uint8_t> &buffer)
 		return Status::EmptyResponse;
 	}
 
-	// TODO: What if count overflows (meaning : responses are bigger than 255 bytes); Should we split it over multiple packets?
 	// Send the header bytes
 	SendByte(buffer, SYNC_BYTE); // Do not escape the sync byte!
 	SendEscapedByte(buffer, TARGET_MASTER);

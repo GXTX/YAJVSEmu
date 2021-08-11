@@ -37,8 +37,7 @@ SerIo::SerIo(const char *devicePath)
 	sp_return ret = sp_open(Port, SP_MODE_READ_WRITE);
 
 	if (ret != SP_OK) {
-		std::printf("SerIo::Init: Failed to open %s.", devicePath);
-		std::cout << std::endl;
+		std::cerr << "SerIo::Init: Failed to open " << devicePath << "\n";
 		IsInitialized = false;
 	} else {
 		sp_set_config(Port, PortConfig);
@@ -66,7 +65,7 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	std::cout << "\n";
 #endif
 
-	int ret = sp_nonblocking_write(Port, buffer.data(), buffer.size());
+	int ret = sp_nonblocking_write(Port, &buffer[0], buffer.size());
 
 	if (ret <= 0) {
 		return Status::WriteError;
