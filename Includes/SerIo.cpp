@@ -52,11 +52,6 @@ SerIo::~SerIo()
 
 SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 {
-	// This shouldn't happen...
-	if (buffer.empty()) {
-		return Status::ZeroSizeError;
-	}
-
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
 	for (uint8_t c : buffer) {
@@ -65,8 +60,10 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	std::cout << "\n";
 #endif
 
-	int ret = sp_nonblocking_write(Port, &buffer[0], buffer.size());
+	sp_nonblocking_write(Port, &buffer[0], buffer.size());
 
+#if 0
+	// TODO: Should we care about write errors?
 	if (ret <= 0) {
 		return Status::WriteError;
 	} else if (ret != static_cast<int>(buffer.size())) {
@@ -75,6 +72,7 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 #endif
 		return Status::WriteError;
 	}
+#endif
 
 	return Status::Okay;
 }
@@ -83,12 +81,10 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 {
 	int bytes = sp_input_waiting(Port);
 
-	if (bytes == 0) {
-		return Status::ZeroSizeError;
-	} else if (bytes < 0) {
+	if (bytes <= 0) {
 		return Status::ReadError;
 	} else if (bytes < 5) {
-		return Status::ReadError; // TODO: Dirty hack
+		return Status::ReadError; // FIXME: Dirty hack, smalled size packet is 5 bytes
 	}
 
 	buffer.resize(static_cast<size_t>(bytes));

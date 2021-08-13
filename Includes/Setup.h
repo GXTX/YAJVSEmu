@@ -32,33 +32,33 @@
 class SetupInfo
 {
 public:
-    struct SetupInfos{
-        enum Backend {
-            None,
-            SDL,
-            XWII,
-        };
-        int players{1};
-        Backend backend;
-        int device_index{0}; // SDL device
-        std::string device_path{}; // XWII path
-        std::string serial_port{};
-    };
+	struct SetupInfos{
+		enum Backend {
+			None,
+			SDL,
+			XWII,
+		};
+		int players{1};
+		Backend backend;
+		int device_index{0}; // SDL device
+		std::string device_path{}; // XWII path
+		std::string serial_port{};
+	};
 
-    enum class SetupStatus {
-        Okay,
-        Failed,
-    };
+	enum class SetupStatus {
+		Okay,
+		Failed,
+	};
 
 	bool IsFinished{false};
 
-    SetupInfos info;
+	SetupInfos info;
 
 	SetupInfo();
 private:
-    SetupStatus UserInput();
-    SetupStatus SDLAsk();
-    SetupStatus XWIIAsk();
+	SetupStatus UserInput();
+	SetupStatus SDLAsk();
+	SetupStatus XWIIAsk();
 };
 
 #endif

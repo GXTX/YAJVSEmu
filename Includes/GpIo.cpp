@@ -21,6 +21,8 @@
 
 #include "GpIo.h"
 
+//#define DEBUG_GPIO
+
 GpIo::GpIo(SenseType sense_type)
 {
 	if (bcm2835_init()) {
@@ -36,11 +38,6 @@ GpIo::GpIo(SenseType sense_type)
 GpIo::~GpIo()
 {
 	bcm2835_close();
-}
-
-void GpIo::Loop()
-{
-	// TODO: decouple GpIo manipulation from main thread loop.
 }
 
 void GpIo::SetMode(PinMode state) 

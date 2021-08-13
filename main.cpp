@@ -30,19 +30,22 @@
 #include "GpIo.h"
 #include "SdlIo.h"
 #include "WiiIo.h"
-#include "Setup.hpp"
+#include "Setup.h"
 #include "version.h"
+
+//#define REAL_TIME
 
 #ifdef REAL_TIME
 // If we don't delay longer we'll starve the other processes of CPU time.
-auto delay{std::chrono::microseconds(25)};
+auto delay{std::chrono::microseconds(20)};
 #else
 auto delay{std::chrono::microseconds(5)};
 #endif
 
 std::atomic<bool> running{true};
 
-void sig_handle(int sig) {
+void sig_handle(int sig)
+{
 	if (sig == SIGINT || sig == SIGTERM) {
 		running = false;
 	}
@@ -71,7 +74,7 @@ int main()
 
 	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
 	if (!GPIOHandler->IsInitialized) {
-		std::cerr << "Couldn't initalize GPIO controller and 'NONE' wasn't explicitly set.\n";
+		std::cerr << "Couldn't initalize GPIO controller.\n";
 		return 1;
 	}
 
@@ -101,7 +104,6 @@ int main()
 	Setup.reset();
 
 	JvsIo::Status jvsStatus;
-	SerIo::Status serialStatus;
 
 	std::vector<uint8_t> SerialBuffer{};
 	SerialBuffer.reserve(512);
@@ -113,25 +115,23 @@ int main()
 			SerialBuffer.clear();
 		}
 
-		serialStatus = SerialHandler->Read(SerialBuffer);
-		if (serialStatus != SerIo::Status::Okay) {
+		if (SerialHandler->Read(SerialBuffer) != SerIo::Status::Okay) {
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
 
 		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
-
-		if(JVSHandler->pSenseChange){
-			if(JVSHandler->pSense == JvsIo::SenseState::NotConnected) {
-				GPIOHandler->SetMode(GpIo::PinMode::In);
-			} else {
-				GPIOHandler->SetMode(GpIo::PinMode::Out);
-				GPIOHandler->Write(GpIo::PinState::Low);
-			}
-			JVSHandler->pSenseChange = false;
-		}
-
 		if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
+			if(JVSHandler->pSenseChange){
+				if(JVSHandler->pSense == JvsIo::SenseState::NotConnected) {
+					GPIOHandler->SetMode(GpIo::PinMode::In);
+				} else {
+					GPIOHandler->SetMode(GpIo::PinMode::Out);
+					GPIOHandler->Write(GpIo::PinState::Low);
+				}
+				JVSHandler->pSenseChange = false;
+			}
+
 			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
 			SerialHandler->Write(SerialBuffer);
 		}

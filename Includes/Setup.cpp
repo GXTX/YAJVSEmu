@@ -19,7 +19,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "Setup.hpp"
+#include "Setup.h"
 
 SetupInfo::SetupInfo()
 {

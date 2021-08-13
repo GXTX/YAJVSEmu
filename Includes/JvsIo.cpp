@@ -44,21 +44,6 @@ JvsIo::JvsIo(SenseState sense)
 	ProcessedPacket.reserve(512);
 }
 
-#if 0
-uint8_t JvsIo::Jvs_Command_F0_Reset(uint8_t *data)
-{
-	uint8_t ensure_reset = data[1];
-
-	if (ensure_reset == 0xD9) {
-		pSense = SenseState::NotConnected; // Set sense 2.5v to instruct the baseboard we're ready.
-		pSenseChange = true;
-		//ResponseBuffer.emplace_back(JvsReportCode::Handled);
-		DeviceID = 0;
-	}
-	return 1;
-}
-#endif
-
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
 {
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
@@ -106,8 +91,6 @@ uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 {
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
-	// Capabilities list (4 bytes each)
-
 	// Input capabilities
 	ResponseBuffer.emplace_back(JvsCapabilityCode::PlayerSwitchButtonSets);
 	ResponseBuffer.emplace_back(JVS_MAX_PLAYERS); // number of players
@@ -123,19 +106,7 @@ uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 	ResponseBuffer.emplace_back(JVS_MAX_ANALOG); // number of analog input channels
 	ResponseBuffer.emplace_back(16); // 16 bits per analog input channel
 	ResponseBuffer.emplace_back(0);
-/*
-	// Input switches
-	ResponseBuffer.emplace_back(JvsCapabilityCode::SwitchInputs);
-	ResponseBuffer.emplace_back(0);
-	ResponseBuffer.emplace_back(16);
-	ResponseBuffer.emplace_back(0);
 
-	// NOTE: SEGA hardware used/uses 12 bits, NAMCO is known to use 16 bits.
-	ResponseBuffer.emplace_back(JvsCapabilityCode::ScreenPointerInputs);
-	ResponseBuffer.emplace_back(16); // 16bits for X
-	ResponseBuffer.emplace_back(16); // Y
-	ResponseBuffer.emplace_back(JVS_MAX_SCREEN_CHANNELS);
-*/
 	// Output capabilities
 	ResponseBuffer.emplace_back(JvsCapabilityCode::GeneralPurposeOutputs);
 	ResponseBuffer.emplace_back(JVS_MAX_GPO); // number of outputs
