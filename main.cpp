@@ -82,7 +82,6 @@ int main()
 	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
 
 	std::unique_ptr<SetupInfo> Setup (std::make_unique<SetupInfo>());
-
 	if (!Setup->IsFinished) {
 		std::cerr << "Unknown problem setting up input devices.\n";
 		return 1;
@@ -132,7 +131,7 @@ int main()
 				JVSHandler->pSenseChange = false;
 			}
 
-			jvsStatus = JVSHandler->SendPacket(SerialBuffer);
+			JVSHandler->SendPacket(SerialBuffer);
 			SerialHandler->Write(SerialBuffer);
 		}
 

@@ -325,7 +325,7 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 		case Read: // Read 8 bytes of on-board memory of the device, pad with FF's.
 			ResponseBuffer.emplace_back(JvsReportCode::Handled);
 			{
-				uint16_t read_address = (data[2] << 8) | data[3];
+				//uint16_t read_address = (data[2] << 8) | data[3]; // TODO: Do stuff with this.
 
 				for (uint8_t i = 0; i != 8; i++){
 					ResponseBuffer.emplace_back(0xFF);
@@ -368,15 +368,13 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 			{
 				// Wangan Midnight Tune 2B sends: 70 18 50 4C 14 FE
 				// FCA reply: E0 00 04 01 01 01 07
-				// This implies there's 2 subcommands being ran
-				// but a subcommand dump of 0x00-0xFF only gives us the
-				// commands in the Command{} enum. Is it possible the actual
-				// response is 0x01 and not a status byte?
-				ResponseBuffer.emplace_back(JvsReportCode::Handled);
+				// Is it possible this is actually a JVS status byte?
+				ResponseBuffer.emplace_back(0x01);
 			}
 			return 5;
 		default:
-			// TODO: We really should update the StatusCode.
+			// FIXME: We really should update the StatusCode, not doing so will probably crash Master.
+			std::cerr << "JvsIo::Jvs_Command_70_NamcoSpecific: Unsupported command 0x" << std::hex << static_cast<int>(subcommand) << "\n";
 			return 1;
 	}
 
@@ -408,7 +406,7 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			return;
 			case 0xF1:
 				{
-					// If we already have an ID we must *not* respond
+					// If we already have an ID we *must* not respond
 					if (DeviceID != 0) {
 						ResponseBuffer.clear();
 						return;
@@ -474,6 +472,9 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	uint8_t target = GetEscapedByte(buffer);
 	if (target != DeviceID && target != TARGET_BROADCAST) {
 		// Don't tell the user about this, in setups where there are multiple devices the output will be too noisy.
+#if 0
+		std::cerr << "JvsIo::ReceivePacket: Not for us, ignoring.\n";
+#endif
 		return Status::WrongTarget;
 	}
 
