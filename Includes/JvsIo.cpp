@@ -118,25 +118,24 @@ uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 	return 0;
 }
 
-// TODO: Verify with a test case...
 uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 {
 	ResponseBuffer.emplace_back(JvsReportCode::Handled);
 
-	std::string masterID;
+	std::string masterID{};
 
-	// Skip first 2 bytes, max size is 100, break on null.
+	// Skip first byte, max size is 100, break on null.
 	for (int i = 0; i != 100; i++) {
-		if (data[i+2] == 0x00)
+		if (data[i+1] == 0x00)
 			break;
-		masterID.push_back(data[i+2]);
+		masterID.push_back(data[i+1]);
 	}
 
 #ifdef DEBUG_CONVEY_ID
 	std::cout << "JvsIo::Jvs_Command_15_ConveyId: " << std::printf("%s\n", masterID.c_str());
 #endif
 
-	return 1 + masterID.size();
+	return 1 + masterID.size(); // +1 for null byte
 }
 
 uint8_t JvsIo::Jvs_Command_20_ReadSwitchInputs(uint8_t *data)
@@ -363,11 +362,13 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 				ResponseBuffer.emplace_back(0xFF);
 			}
 			return 1;
-		case UNK_18: // No idea, comes in with 4 params
+		case UNK_18: // No idea, seems to have variable length, should we hope we only get this command as a single?
 			ResponseBuffer.emplace_back(JvsReportCode::Handled);
 			{
 				// Wangan Midnight Tune 2B sends: 70 18 50 4C 14 FE
-				// FCA reply: E0 00 04 01 01 01 07
+				// (Real machine uses a FCA11) FCA10 reply: E0 00 04 01 01 01 07
+				// Taiko no tatsujin: 70 18 50 4C 14 40
+				// V328 MINI-JV: unk
 				// Is it possible this is actually a JVS status byte?
 				ResponseBuffer.emplace_back(0x01);
 			}
