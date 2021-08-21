@@ -40,8 +40,8 @@ JvsIo::JvsIo(SenseState sense)
 
 	BoardID = "SEGA ENTERPRISES,LTD.;I/O BD JVS;837-13551;Ver1.00";
 
-	ResponseBuffer.reserve(512);
-	ProcessedPacket.reserve(512);
+	ResponseBuffer.reserve(256);
+	ProcessedPacket.reserve(256);
 }
 
 uint8_t JvsIo::Jvs_Command_F1_SetDeviceId(uint8_t *data)
@@ -440,15 +440,15 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 	}
 }
 
-uint8_t JvsIo::GetByte(std::vector<uint8_t> &buffer)
+uint8_t JvsIo::GetByte(uint8_t **buffer)
 {
-	uint8_t value = buffer[0];
-	buffer.erase(buffer.begin());
+	uint8_t value = (*buffer)[0];
+	*buffer += 1;
 
 	return value;
 }
 
-uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
+uint8_t JvsIo::GetEscapedByte(uint8_t **buffer)
 {
 	uint8_t value = GetByte(buffer);
 
@@ -462,25 +462,30 @@ uint8_t JvsIo::GetEscapedByte(std::vector<uint8_t> &buffer)
 
 JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 {
+	uint8_t *buf = &buffer[0];
+
 	// First, read the sync byte
-	if (GetByte(buffer) != SYNC_BYTE) { // Do not unescape the sync-byte!
+	uint8_t sync = GetByte(&buf);
+	if (sync != SYNC_BYTE) { // Do not unescape the sync-byte!
 #ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Missing sync byte!\n";
 #endif
 		return Status::SyncError;
 	}
 
-	uint8_t target = GetEscapedByte(buffer);
+	uint8_t target = GetEscapedByte(&buf);
 	if (target != DeviceID && target != TARGET_BROADCAST) {
 		// Don't tell the user about this, in setups where there are multiple devices the output will be too noisy.
 #if 0
+#ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Not for us, ignoring.\n";
+#endif
 #endif
 		return Status::WrongTarget;
 	}
 
-	uint8_t count = GetEscapedByte(buffer);
-	if (count != buffer.size()) {
+	uint8_t count = GetEscapedByte(&buf);
+	if (count != (buffer.size() - 3)) { // Subtract 3 because buffer.size() still has all of the elements in it.
 #ifdef DEBUG_JVS_PACKETS
 		std::cerr << "JvsIo::ReceivePacket: Count was incorrect, ignoring.\n";
 #endif
@@ -493,13 +498,13 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	// Decode the payload data
 	ProcessedPacket.clear();
 	for (uint8_t i = 0; i != count - 1; i++) { // NOTE: -1 to avoid adding the checksum byte to the packet
-		uint8_t value = GetEscapedByte(buffer);
+		uint8_t value = GetEscapedByte(&buf);
 		ProcessedPacket.emplace_back(value);
 		actual_checksum += value;
 	}
 
 	// Read the checksum from the last byte
-	uint8_t packet_checksum = GetEscapedByte(buffer);
+	uint8_t packet_checksum = GetEscapedByte(&buf);
 
 	// Verify checksum - skip packet if invalid
 	if (packet_checksum != actual_checksum) {
@@ -507,7 +512,7 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 		std::cerr << "JvsIo::ReceivePacket: Miscalcuated checksum, notifying master.\n";
 #endif
 		ResponseBuffer.emplace_back(JvsStatusCode::ChecksumError);
-		return Status::SumError;
+		return Status::ChecksumError;
 	}
 
 #ifdef DEBUG_JVS_PACKETS
@@ -522,6 +527,11 @@ JvsIo::Status JvsIo::ReceivePacket(std::vector<uint8_t> &buffer)
 	ResponseBuffer.clear();
 
 	HandlePacket(ProcessedPacket);
+
+	// Only clear the main ReadBuffer if we know we've handled this packet properly.
+	if (!ResponseBuffer.empty()) {
+		buffer.clear();
+	}
 
 	return Status::Okay;
 }

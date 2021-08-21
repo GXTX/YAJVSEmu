@@ -185,20 +185,20 @@ public:
 	enum class Status {
 		Okay,
 		SyncError,
-		SumError,
 		CountError,
 		WrongTarget,
+		ChecksumError,
 		EmptyResponse,
 		ServerWaitingReply,
 	};
 
 	enum class SenseState {
-		NotConnected,
 		Connected,
+		NotConnected,
 	};
 
 	SenseState pSense{SenseState::NotConnected};
-	bool pSenseChange{};
+	bool pSenseChange{false};
 	jvs_input_states Inputs;
 
 	JvsIo(SenseState sense);
@@ -212,8 +212,8 @@ private:
 	static const uint8_t TARGET_MASTER{0x00};
 	static const uint8_t TARGET_BROADCAST{0xFF};
 
-	uint8_t GetByte(std::vector<uint8_t> &buffer);
-	uint8_t GetEscapedByte(std::vector<uint8_t> &buffer);
+	uint8_t GetByte(uint8_t **buffer);
+	uint8_t GetEscapedByte(uint8_t **buffer);
 
 	void HandlePacket(std::vector<uint8_t> &packet);
 
@@ -275,11 +275,11 @@ private:
 	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
 	uint8_t Jvs_Command_70_NamcoSpecific(uint8_t *data);
 
-	uint8_t DeviceID{}; // Device ID assigned by running title
 	std::vector<uint8_t> ResponseBuffer{}; // Command Response
 	std::vector<uint8_t> ProcessedPacket{}; // Hold the incoming packet after we've processed
 
 	// Device info
+	uint8_t DeviceID{}; // Device ID assigned by running title
 	uint8_t CommandFormatRevision{};
 	uint8_t JvsVersion{};
 	uint8_t CommunicationVersion{};

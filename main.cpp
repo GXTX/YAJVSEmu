@@ -33,6 +33,8 @@
 #include "Setup.h"
 #include "version.h"
 
+#define NUMBER_OF_IO_BOARDS 1 // Max: 31
+
 //#define REAL_TIME
 
 #ifdef REAL_TIME
@@ -79,7 +81,10 @@ int main()
 	}
 
 	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
-	std::shared_ptr<JvsIo> JVSHandler (std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
+	std::vector<std::shared_ptr<JvsIo>> boards;
+	while (boards.size() != NUMBER_OF_IO_BOARDS) {
+		boards.emplace_back(std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
+	}
 
 	std::unique_ptr<SetupInfo> Setup (std::make_unique<SetupInfo>());
 	if (!Setup->IsFinished) {
@@ -93,52 +98,70 @@ int main()
 		return 1;
 	}
 
+	// Only hookup inputs for the first IO board, we can support all 31 but no reason.
 	if (Setup->info.backend == Setup->info.SDL) {
-		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(Setup->info.device_index, &JVSHandler->Inputs)).detach();
+		std::thread(&SdlIo::Loop, std::make_unique<SdlIo>(Setup->info.device_index, &boards[0]->Inputs)).detach();
 	} else if (Setup->info.backend == Setup->info.XWII) {
-		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(Setup->info.players, &JVSHandler->Inputs)).detach();
+		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(Setup->info.players, &boards[0]->Inputs)).detach();
 	}
 
 	// Free
 	Setup.reset();
 
 	JvsIo::Status jvsStatus;
+	SerIo::Status serialStatus;
 
-	std::vector<uint8_t> SerialBuffer{};
-	SerialBuffer.reserve(512);
+	std::vector<uint8_t> ReadBuffer{};
+	std::vector<uint8_t> WriteBuffer{};
+	ReadBuffer.reserve(256);
+	WriteBuffer.reserve(256);
 
 	std::cout << "Running...\n";
 
 	while (running) {
-		if (!SerialBuffer.empty()) {
-			SerialBuffer.clear();
+		if (!ReadBuffer.empty()) {
+			ReadBuffer.clear();
 		}
 
-		if (SerialHandler->Read(SerialBuffer) != SerIo::Status::Okay) {
+		if (SerialHandler->Read(ReadBuffer) != SerIo::Status::Okay) {
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
 
-		jvsStatus = JVSHandler->ReceivePacket(SerialBuffer);
-		if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::SumError) {
-			if(JVSHandler->pSenseChange){
-				if(JVSHandler->pSense == JvsIo::SenseState::NotConnected) {
+		for (auto &board : boards) {
+			jvsStatus = board->ReceivePacket(ReadBuffer);
+			if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::ChecksumError) {
+				if (!WriteBuffer.empty()) {
+					WriteBuffer.clear();
+				}
+				board->SendPacket(WriteBuffer);
+				serialStatus = SerialHandler->Write(WriteBuffer);
+				if (serialStatus == SerIo::Status::Okay) {
+					// Avoid checking the rest of the boards if we have more than one & we've generated a valid response.
+					break;
+				}
+			}
+		}
+
+		if (boards[0]->pSenseChange) { // If the first board wants a change then we should iterate through the rest, otherwise we're wasting cycles.
+			if (std::all_of(boards.begin(), boards.end(), [](const auto &board) { return board->pSenseChange; })) {
+				// We only care about the first boards setting.
+				if (boards[0]->pSense == JvsIo::SenseState::NotConnected) {
 					GPIOHandler->SetMode(GpIo::PinMode::In);
 				} else {
 					GPIOHandler->SetMode(GpIo::PinMode::Out);
 					GPIOHandler->Write(GpIo::PinState::Low);
 				}
-				JVSHandler->pSenseChange = false;
-			}
 
-			JVSHandler->SendPacket(SerialBuffer);
-			SerialHandler->Write(SerialBuffer);
+				// Reset all boards.
+				for (auto &board : boards) {
+					board->pSenseChange = false;
+				}
+			}
 		}
 
 		std::this_thread::sleep_for(delay);
 	}
-
-	std::cout << std::endl;
 
 	return 0;
 }
