@@ -58,7 +58,7 @@ struct jvs_switch_player_input{
 	bool down{};
 	bool left{};
 	bool right{};
-	bool button[7]{};
+	bool button[10]{};
 
 	uint8_t GetByte0() {
 		uint8_t value{};
@@ -80,9 +80,13 @@ struct jvs_switch_player_input{
 		value |= button[4] ? 1 << 5 : 0;
 		value |= button[5] ? 1 << 4 : 0;
 		value |= button[6] ? 1 << 3 : 0;
+		value |= button[7] ? 1 << 2 : 0; //
+		value |= button[8] ? 1 << 1 : 0; // Unused buttons with Type-1 IO
+		value |= button[9] ? 1 << 0 : 0; //
 		return value;
 	}
 };
+
 
 struct jvs_switch_general_input {
 	bool button[16]{};

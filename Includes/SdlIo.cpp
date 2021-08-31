@@ -78,11 +78,11 @@ void SdlIo::ButtonPressHandler(SDL_ControllerButtonEvent *button)
 		case SDL_CONTROLLER_BUTTON_BACK: Inputs->switches.system.test = button->state; break;
 		case SDL_CONTROLLER_BUTTON_GUIDE: Inputs->switches.player[0].service = button->state; break;
 		case SDL_CONTROLLER_BUTTON_START: Inputs->switches.player[0].start = button->state; break;
-		case SDL_CONTROLLER_BUTTON_LEFTSTICK: Inputs->switches.player[0].button[4] = button->state; break;
-		case SDL_CONTROLLER_BUTTON_RIGHTSTICK: Inputs->switches.player[0].button[5] = button->state; break;
+		case SDL_CONTROLLER_BUTTON_LEFTSTICK: Inputs->switches.player[0].button[9] = button->state; break; // "Intrude Change" WMMT2
+		case SDL_CONTROLLER_BUTTON_RIGHTSTICK: Inputs->switches.player[0].button[8] = button->state; break; // "View Change" WMMT2
 		case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: Inputs->switches.player[1].down = button->state; break;
 		case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: Inputs->switches.player[1].up = button->state;  break;
-
+	
 		case SDL_CONTROLLER_BUTTON_DPAD_UP: Inputs->switches.player[0].up = button->state; break;
 		case SDL_CONTROLLER_BUTTON_DPAD_DOWN: Inputs->switches.player[0].down = button->state; break;
 		case SDL_CONTROLLER_BUTTON_DPAD_LEFT: Inputs->switches.player[0].left = button->state; break;
