@@ -41,6 +41,8 @@ SetupInfo::SetupStatus SetupInfo::UserInput()
 	// TODO: Sanitize and verify answer.
 	if (user_input.empty()) {
 		info.serial_port = "/dev/ttyUSB0";
+	} else {
+		info.serial_port = user_input;
 	}
 
 	user_input.clear();
