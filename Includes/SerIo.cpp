@@ -83,13 +83,29 @@ SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 {
 	int bytes = sp_input_waiting(Port);
 
-	if (bytes <= 4) { // FIXME: Dirty hack, smallest size packet is 5 bytes
+	if (bytes < 1) { // FIXME: Dirty hack
 		return Status::ReadError;
 	}
 
-	buffer.resize(static_cast<size_t>(bytes));
+	int ret{};
 
-	int ret = sp_nonblocking_read(Port, &buffer[0], buffer.size());
+	if (buffer.empty()) {
+		buffer.resize(static_cast<size_t>(bytes));
+		ret = sp_nonblocking_read(Port, &buffer[0], buffer.size());
+	} else {
+		uint8_t readSize = buffer[2] - (buffer.size() - 3);
+
+		std::vector<uint8_t> newBuffer{};
+		newBuffer.resize(readSize);
+
+		ret = sp_nonblocking_read(Port, &newBuffer[0], newBuffer.size());
+
+		if (ret > 0) {
+			for (const uint8_t r : newBuffer) {
+				buffer.emplace_back(r);
+			}
+		}
+	}
 
 	if (ret <= 0) {
 		return Status::ReadError;
