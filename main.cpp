@@ -118,12 +118,19 @@ int main()
 
 	std::cout << "Running...\n";
 
+	std::bool emptyBuffer{false};
+
 	while (running) {
-		if (!ReadBuffer.empty()) {
+		if (emptyBuffer && !ReadBuffer.empty()) {
 			ReadBuffer.clear();
 		}
 
 		if (SerialHandler->Read(ReadBuffer) != SerIo::Status::Okay) {
+			std::this_thread::sleep_for(delay);
+			continue;
+		}
+
+		if (ReadBuffer.size() < 5) { // smallest packet size is 5 bytes
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
@@ -138,9 +145,18 @@ int main()
 				serialStatus = SerialHandler->Write(WriteBuffer);
 				if (serialStatus == SerIo::Status::Okay) {
 					// Avoid checking the rest of the boards if we have more than one & we've generated a valid response.
+					emptyBuffer = true;
 					break;
 				}
+			} else if (jvsStatus == JvsIo::Status::CountError) {
+				if ((ReadBuffer.size() - 3) < Readbuffer[2]) {
+					emptyBuffer = false;
+				} else {
+					emptyBuffer = true;
+				}
+				break;
 			}
+			emptyBuffer = true;
 		}
 
 		if (boards[0]->pSenseChange) { // If the first board wants a change then we should iterate through the rest, otherwise we're wasting cycles.
