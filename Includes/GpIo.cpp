@@ -25,6 +25,8 @@
 
 GpIo::GpIo(SenseType sense_type)
 {
+	this->sense_type = sense_type;
+
 	if (bcm2835_init()) {
 		IsInitialized = true;
 		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_INPT);
@@ -57,12 +59,12 @@ void GpIo::SetMode(PinMode state)
 
 void GpIo::Write(PinState state)
 {
-	if (state == PinState::Low) {
+	if ((state == PinState::Low && sense_type == SenseType::Float) || (state == PinState::High && sense_type == SenseType::Sink)) {
 		bcm2835_gpio_write(PIN, LOW);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::Write: Grounded sense line.");
 #endif
-	} else if (state == PinState::High) {
+	} else if ((state == PinState::High && sense_type == SenseType::Float) || (state == PinState::Low && sense_type == SenseType::Sink)) {
 		bcm2835_gpio_write(PIN, HIGH);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::Write: Pulling up the sense line.");
