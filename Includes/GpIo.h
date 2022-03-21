@@ -34,6 +34,7 @@ public:
 	enum class SenseType{
 		None,
 		Float,
+		Sink,
 	};
 
 	enum class PinMode{
@@ -54,6 +55,7 @@ public:
 	void SetMode(PinMode state);
 	void Write(PinState state);
 private:
+	SenseType sense_type;
 };
 
 #endif

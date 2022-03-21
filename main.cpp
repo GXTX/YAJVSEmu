@@ -74,7 +74,10 @@ int main()
 	std::signal(SIGINT, sig_handle);
 	std::signal(SIGTERM, sig_handle);
 
-	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Float));
+	// Set sense type here Float for USB to RS485, Sink to OpenJVS Hat
+	GpIo::SenseType sense_type = GpIo::SenseType::Float;
+
+	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(sense_type));
 	if (!GPIOHandler->IsInitialized) {
 		std::cerr << "Couldn't initalize GPIO controller.\n";
 		return 1;
@@ -118,7 +121,7 @@ int main()
 
 	std::cout << "Running...\n";
 
-	std::bool emptyBuffer{false};
+	bool emptyBuffer{false};
 
 	while (running) {
 		if (emptyBuffer && !ReadBuffer.empty()) {
@@ -131,6 +134,7 @@ int main()
 		}
 
 		if (ReadBuffer.size() < 5) { // smallest packet size is 5 bytes
+			emptyBuffer = false;
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
@@ -149,7 +153,7 @@ int main()
 					break;
 				}
 			} else if (jvsStatus == JvsIo::Status::CountError) {
-				if ((ReadBuffer.size() - 3) < Readbuffer[2]) {
+				if ((ReadBuffer.size() - 3) < ReadBuffer[2]) {
 					emptyBuffer = false;
 				} else {
 					emptyBuffer = true;
