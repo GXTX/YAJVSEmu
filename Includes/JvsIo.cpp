@@ -128,7 +128,7 @@ uint8_t JvsIo::Jvs_Command_15_ConveyId(uint8_t *data)
 	for (int i = 0; i != 100; i++) {
 		if (data[i+1] == 0x00)
 			break;
-		masterID.push_back(data[i+1]);
+		masterID.push_back(static_cast<char>(data[i+1]));
 	}
 
 #ifdef DEBUG_CONVEY_ID
@@ -297,7 +297,7 @@ uint8_t JvsIo::Jvs_Command_35_CoinAdditionOutput(uint8_t *data)
 
 	uint8_t slot = data[1] - 1;
 	uint16_t increment = (data[2] << 8) | data[3];
-	uint32_t total = Inputs.coins[data[1]].coins + increment;
+	uint32_t total = static_cast<uint32_t>(Inputs.coins[data[1]].coins + increment);
 
 	if (total <= 0x3FFF) {
 		Inputs.coins[slot].coins += increment;

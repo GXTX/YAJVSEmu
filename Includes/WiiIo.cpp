@@ -162,6 +162,6 @@ void WiiIo::IRMovementHandler(int player, xwii_event_abs *ir, MovementValueType 
 			default: break;
 		}
 	} else {
-		Inputs->screen[player].position = (finalx << 16) | finaly;
+		Inputs->screen[player].position = static_cast<uint32_t>((finalx << 16) | finaly);
 	}
 }

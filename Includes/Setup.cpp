@@ -155,7 +155,7 @@ SetupInfo::SetupStatus SetupInfo::XWIIAsk()
 			if (user_input.compare("y") == 0) {
 				user_input.clear();
 				std::cout << "How many? ";
-				std::printf("(1 - %d", wiiremotePaths.size() > JVS_MAX_PLAYERS ? JVS_MAX_PLAYERS : wiiremotePaths.size());
+				std::printf("(1 - %ld", wiiremotePaths.size() > JVS_MAX_PLAYERS ? JVS_MAX_PLAYERS : wiiremotePaths.size());
 				std::getline(std::cin, user_input);
 
 				if (!std::strtol(user_input.data(), NULL, 10)) {

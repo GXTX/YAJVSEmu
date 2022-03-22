@@ -24,6 +24,7 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
+#include <memory>
 
 #include "JvsIo.h"
 #include "SerIo.h"
