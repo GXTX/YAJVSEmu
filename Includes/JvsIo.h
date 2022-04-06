@@ -17,7 +17,7 @@
 // *  59 Temple Place - Suite 330, Bostom, MA 02111-1307, USA.
 // *
 // *  (c) 2019 Luke Usher
-// *  (c) 2020-2021 wutno (https://github.com/GXTX)
+// *  (c) 2020-2022 wutno (https://github.com/GXTX)
 // *
 // *  All rights reserved
 // *
@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <iostream>
+#include <tuple>
 
 #define JVS_MAX_PLAYERS (2)
 #define JVS_MAX_ANALOG (8)
@@ -86,7 +87,6 @@ struct jvs_switch_player_input{
 		return value;
 	}
 };
-
 
 struct jvs_switch_general_input {
 	bool button[16]{};
@@ -201,6 +201,12 @@ public:
 		NotConnected,
 	};
 
+	static const uint8_t SYNC_BYTE{0xE0};
+	static const uint8_t ESCAPE_BYTE{0xD0};
+
+	static const uint8_t TARGET_MASTER{0x00};
+	static const uint8_t TARGET_BROADCAST{0xFF};
+
 	SenseState pSense{SenseState::NotConnected};
 	bool pSenseChange{false};
 	jvs_input_states Inputs;
@@ -208,20 +214,17 @@ public:
 	JvsIo(SenseState sense);
 
 	JvsIo::Status SendPacket(std::vector<uint8_t> &buffer);
-	JvsIo::Status ReceivePacket(std::vector<uint8_t> &buffer);
+	std::tuple<JvsIo::Status, size_t> ReceivePacket(std::vector<uint8_t> &buffer);
+
+	int currentTarget{};
+	uint8_t DeviceID{}; // Device ID assigned by running title
 private:
-	static const uint8_t SYNC_BYTE{0xE0};
-	static const uint8_t ESCAPE_BYTE{0xD0};
-
-	static const uint8_t TARGET_MASTER{0x00};
-	static const uint8_t TARGET_BROADCAST{0xFF};
-
 	uint8_t GetByte(uint8_t **buffer);
 	uint8_t GetEscapedByte(uint8_t **buffer);
 
 	void HandlePacket(std::vector<uint8_t> &packet);
 
-	void SendByte(std::vector<uint8_t> &buffer, uint8_t value);
+	void SendByte(std::vector<uint8_t> &buffer, const uint8_t value);
 	void SendEscapedByte(std::vector<uint8_t> &buffer, uint8_t value);
 
 	enum JvsStatusCode {
@@ -262,28 +265,27 @@ private:
 #if 0
 	uint8_t Jvs_Command_F0_Reset(uint8_t *data);
 #endif
-	uint8_t Jvs_Command_F1_SetDeviceId(uint8_t *data);
+	uint8_t Jvs_Command_F1_SetDeviceId(const uint8_t *data);
 	uint8_t Jvs_Command_10_GetBoardId();
 	uint8_t Jvs_Command_11_GetCommandFormat();
 	uint8_t Jvs_Command_12_GetJvsRevision();
 	uint8_t Jvs_Command_13_GetCommunicationVersion();
 	uint8_t Jvs_Command_14_GetCapabilities();
-	uint8_t Jvs_Command_15_ConveyId(uint8_t *data);
-	uint8_t Jvs_Command_20_ReadSwitchInputs(uint8_t *data);
-	uint8_t Jvs_Command_21_ReadCoinInputs(uint8_t *data);
-	uint8_t Jvs_Command_22_ReadAnalogInputs(uint8_t *data);
-	uint8_t Jvs_Command_25_ReadScreenPosition(uint8_t *data);
-	uint8_t Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data);
-	uint8_t Jvs_Command_30_CoinSubtractionOutput(uint8_t *data);
-	uint8_t Jvs_Command_32_GeneralPurposeOutput(uint8_t *data);
-	uint8_t Jvs_Command_35_CoinAdditionOutput(uint8_t *data);
-	uint8_t Jvs_Command_70_NamcoSpecific(uint8_t *data);
+	uint8_t Jvs_Command_15_ConveyId(const uint8_t *data);
+	uint8_t Jvs_Command_20_ReadSwitchInputs(const uint8_t *data);
+	uint8_t Jvs_Command_21_ReadCoinInputs(const uint8_t *data);
+	uint8_t Jvs_Command_22_ReadAnalogInputs(const uint8_t *data);
+	uint8_t Jvs_Command_25_ReadScreenPosition(const uint8_t *data);
+	uint8_t Jvs_Command_26_ReadGeneralSwitchInputs(const uint8_t *data);
+	uint8_t Jvs_Command_30_CoinSubtractionOutput(const uint8_t *data);
+	uint8_t Jvs_Command_32_GeneralPurposeOutput(const uint8_t *data);
+	uint8_t Jvs_Command_35_CoinAdditionOutput(const uint8_t *data);
+	uint8_t Jvs_Command_70_NamcoSpecific(const uint8_t *data);
 
-	std::vector<uint8_t> ResponseBuffer{}; // Command Response
-	std::vector<uint8_t> ProcessedPacket{}; // Hold the incoming packet after we've processed
+	std::vector<uint8_t> currentPacket{};
+	std::vector<uint8_t> commandBuffer{};
 
 	// Device info
-	uint8_t DeviceID{}; // Device ID assigned by running title
 	uint8_t CommandFormatRevision{};
 	uint8_t JvsVersion{};
 	uint8_t CommunicationVersion{};

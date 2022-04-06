@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -25,11 +25,11 @@
 
 GpIo::GpIo(SenseType sense_type)
 {
-	this->sense_type = sense_type;
+	senseType = sense_type;
 
 	if (bcm2835_init()) {
 		IsInitialized = true;
-		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_INPT);
+		bcm2835_gpio_fsel(GPIO_PIN, BCM2835_GPIO_FSEL_INPT);
 		std::puts("GpIo::Init: Initialized sense line.");
 	} else if (sense_type != SenseType::None) {
 		IsInitialized = false;
@@ -39,18 +39,21 @@ GpIo::GpIo(SenseType sense_type)
 
 GpIo::~GpIo()
 {
+	if (senseType != SenseType::None) {
+		SetMode(GpIo::PinMode::In); // Reset to not connected state
+	}
 	bcm2835_close();
 }
 
 void GpIo::SetMode(PinMode state) 
 {
 	if (state == PinMode::In) {
-		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_INPT);
+		bcm2835_gpio_fsel(GPIO_PIN, BCM2835_GPIO_FSEL_INPT);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::SetMode: Toggled pin to IN.");
 #endif
 	} else if (state == PinMode::Out) {
-		bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_OUTP);
+		bcm2835_gpio_fsel(GPIO_PIN, BCM2835_GPIO_FSEL_OUTP);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::SetMode: Toggled pin to OUT.");
 #endif
@@ -59,13 +62,13 @@ void GpIo::SetMode(PinMode state)
 
 void GpIo::Write(PinState state)
 {
-	if ((state == PinState::Low && sense_type == SenseType::Float) || (state == PinState::High && sense_type == SenseType::Sink)) {
-		bcm2835_gpio_write(PIN, LOW);
+	if (state == PinState::Low) {
+		bcm2835_gpio_write(GPIO_PIN, LOW);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::Write: Grounded sense line.");
 #endif
-	} else if ((state == PinState::High && sense_type == SenseType::Float) || (state == PinState::Low && sense_type == SenseType::Sink)) {
-		bcm2835_gpio_write(PIN, HIGH);
+	} else if (state == PinState::High) {
+		bcm2835_gpio_write(GPIO_PIN, HIGH);
 #ifdef DEBUG_GPIO
 		std::puts("GpIo::Write: Pulling up the sense line.");
 #endif

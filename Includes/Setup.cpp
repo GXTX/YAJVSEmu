@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -35,12 +35,12 @@ SetupInfo::SetupStatus SetupInfo::UserInput()
 
 	std::cout << "==================================================\n";
 
-	std::cout << "Which serial port would you like to use? (Default: /dev/ttyUSB0): ";
+	std::cout << "Which serial port would you like to use? (Default: /dev/ttyAMA1): ";
 	std::getline(std::cin, user_input);
 
 	// TODO: Sanitize and verify answer.
 	if (user_input.empty()) {
-		info.serial_port = "/dev/ttyUSB0";
+		info.serial_port = "/dev/ttyAMA1";
 	} else {
 		info.serial_port = user_input;
 	}
@@ -155,7 +155,7 @@ SetupInfo::SetupStatus SetupInfo::XWIIAsk()
 			if (user_input.compare("y") == 0) {
 				user_input.clear();
 				std::cout << "How many? ";
-				std::printf("(1 - %ld", wiiremotePaths.size() > JVS_MAX_PLAYERS ? JVS_MAX_PLAYERS : wiiremotePaths.size());
+				std::printf("(1 - %d", wiiremotePaths.size() > JVS_MAX_PLAYERS ? JVS_MAX_PLAYERS : static_cast<int>(wiiremotePaths.size()));
 				std::getline(std::cin, user_input);
 
 				if (!std::strtol(user_input.data(), NULL, 10)) {

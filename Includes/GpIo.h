@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 
 #include <bcm2835.h>
 
-#define PIN RPI_BPLUS_GPIO_J8_32
+#define GPIO_PIN RPI_BPLUS_GPIO_J8_32
 
 class GpIo
 {
@@ -47,6 +47,7 @@ public:
 		High,
 	};
 
+	SenseType senseType;
 	bool IsInitialized;
 
 	GpIo(SenseType sense_type);
@@ -54,8 +55,6 @@ public:
 
 	void SetMode(PinMode state);
 	void Write(PinState state);
-private:
-	SenseType sense_type;
 };
 
 #endif

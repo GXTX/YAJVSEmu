@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 #include <chrono>
 #include <csignal>
 #include <memory>
+#include <tuple>
 
 #include "JvsIo.h"
 #include "SerIo.h"
@@ -40,7 +41,7 @@
 
 #ifdef REAL_TIME
 // If we don't delay longer we'll starve the other processes of CPU time.
-auto delay{std::chrono::microseconds(20)};
+auto delay{std::chrono::microseconds(25)};
 #else
 auto delay{std::chrono::microseconds(5)};
 #endif
@@ -75,19 +76,16 @@ int main()
 	std::signal(SIGINT, sig_handle);
 	std::signal(SIGTERM, sig_handle);
 
-	// Set sense type here Float for USB to RS485, Sink to OpenJVS Hat
-	GpIo::SenseType sense_type = GpIo::SenseType::Float;
-
-	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(sense_type));
+	// TODO: make sense mode configuable, Sink for OpenJVS hat
+	std::unique_ptr<GpIo> GPIOHandler (std::make_unique<GpIo>(GpIo::SenseType::Sink));
 	if (!GPIOHandler->IsInitialized) {
 		std::cerr << "Couldn't initalize GPIO controller.\n";
 		return 1;
 	}
 
-	// TODO: probably doesn't need to be shared? we only need Inputs to be a shared ptr
-	std::vector<std::shared_ptr<JvsIo>> boards;
+	std::vector<std::unique_ptr<JvsIo>> boards{};
 	while (boards.size() != NUMBER_OF_IO_BOARDS) {
-		boards.emplace_back(std::make_shared<JvsIo>(JvsIo::SenseState::NotConnected));
+		boards.emplace_back(std::make_unique<JvsIo>(JvsIo::SenseState::NotConnected));
 	}
 
 	std::unique_ptr<SetupInfo> Setup (std::make_unique<SetupInfo>());
@@ -109,59 +107,57 @@ int main()
 		std::thread(&WiiIo::Loop, std::make_unique<WiiIo>(Setup->info.players, &boards[0]->Inputs)).detach();
 	}
 
-	// Free
 	Setup.reset();
 
-	JvsIo::Status jvsStatus;
-	SerIo::Status serialStatus;
+	std::tuple<JvsIo::Status, size_t> jvsStatus{};
 
-	std::vector<uint8_t> ReadBuffer{};
-	std::vector<uint8_t> WriteBuffer{};
-	ReadBuffer.reserve(256);
-	WriteBuffer.reserve(256);
+	std::vector<uint8_t> readBuffer{};
+	std::vector<uint8_t> writeBuffer{};
+	readBuffer.reserve(512);
+	writeBuffer.reserve(512);
 
 	std::cout << "Running...\n";
 
-	bool emptyBuffer{false};
+	size_t manErase{};
 
 	while (running) {
-		if (emptyBuffer && !ReadBuffer.empty()) {
-			ReadBuffer.clear();
-		}
-
-		if (SerialHandler->Read(ReadBuffer) != SerIo::Status::Okay) {
+		if (SerialHandler->Read(readBuffer) != SerIo::Status::Okay) {
 			std::this_thread::sleep_for(delay);
 			continue;
 		}
 
-		if (ReadBuffer.size() < 5) { // smallest packet size is 5 bytes
-			emptyBuffer = false;
-			std::this_thread::sleep_for(delay);
-			continue;
+		if (manErase > 0) {
+			readBuffer.erase(readBuffer.begin(), readBuffer.begin() + manErase);
 		}
 
-		for (auto &board : boards) {
-			jvsStatus = board->ReceivePacket(ReadBuffer);
-			if (jvsStatus == JvsIo::Status::Okay || jvsStatus == JvsIo::Status::ChecksumError) {
-				if (!WriteBuffer.empty()) {
-					WriteBuffer.clear();
-				}
-				board->SendPacket(WriteBuffer);
-				serialStatus = SerialHandler->Write(WriteBuffer);
-				if (serialStatus == SerIo::Status::Okay) {
-					// Avoid checking the rest of the boards if we have more than one & we've generated a valid response.
-					emptyBuffer = true;
-					break;
-				}
-			} else if (jvsStatus == JvsIo::Status::CountError) {
-				if ((ReadBuffer.size() - 3) < ReadBuffer[2]) {
-					emptyBuffer = false;
-				} else {
-					emptyBuffer = true;
-				}
+		for (const auto &board : boards) {
+			// No sense running ReceivePacket if we don't have enough in the buffer
+			if (readBuffer.size() < 4) {
 				break;
 			}
-			emptyBuffer = true;
+
+			jvsStatus = board->ReceivePacket(readBuffer);
+
+			if (std::get<JvsIo::Status>(jvsStatus) == JvsIo::Status::Okay || std::get<JvsIo::Status>(jvsStatus) == JvsIo::Status::ChecksumError) {
+				writeBuffer.clear();
+
+				if (board->SendPacket(writeBuffer) != JvsIo::Status::EmptyResponse) {
+					manErase = 0;
+					SerialHandler->Write(writeBuffer);
+					break;
+				}
+			} else if (std::get<JvsIo::Status>(jvsStatus) == JvsIo::Status::SyncError || std::get<JvsIo::Status>(jvsStatus) == JvsIo::Status::CountError) {
+				manErase = 0;
+				break;
+			}
+
+			manErase = std::get<size_t>(jvsStatus);
+		}
+
+		// Protect against malformed packets, or if we're in a real chain
+		int currentTarget = boards.back()->currentTarget;
+		if (currentTarget != JvsIo::TARGET_BROADCAST && std::none_of(boards.begin(), boards.end(), [currentTarget](const auto &board) { return currentTarget == board->DeviceID; })) {
+			readBuffer.clear();
 		}
 
 		if (boards[0]->pSenseChange) { // If the first board wants a change then we should iterate through the rest, otherwise we're wasting cycles.
@@ -171,11 +167,15 @@ int main()
 					GPIOHandler->SetMode(GpIo::PinMode::In);
 				} else {
 					GPIOHandler->SetMode(GpIo::PinMode::Out);
-					GPIOHandler->Write(GpIo::PinState::Low);
+					if (GPIOHandler->senseType == GpIo::SenseType::Float) {
+						GPIOHandler->Write(GpIo::PinState::Low);
+					} else { // Sink
+						GPIOHandler->Write(GpIo::PinState::High);
+					}
 				}
 
 				// Reset all boards.
-				for (auto &board : boards) {
+				for (const auto &board : boards) {
 					board->pSenseChange = false;
 				}
 			}

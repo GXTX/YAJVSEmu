@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -52,10 +52,6 @@ SerIo::~SerIo()
 
 SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 {
-	if (buffer.empty()) {
-		return Status::ZeroSizeError;
-	}
-
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Write:";
 	for (uint8_t c : buffer) {
@@ -63,6 +59,10 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 	}
 	std::cout << "\n";
 #endif
+
+	if (buffer.empty()) {
+		return Status::ZeroSizeError;
+	}
 
 	int ret = sp_nonblocking_write(Port, &buffer[0], buffer.size());
 
@@ -81,39 +81,26 @@ SerIo::Status SerIo::Write(std::vector<uint8_t> &buffer)
 
 SerIo::Status SerIo::Read(std::vector<uint8_t> &buffer)
 {
-	int bytes = sp_input_waiting(Port);
+	size_t waiting = sp_input_waiting(Port);
 
-	if (bytes < 1) { // FIXME: Dirty hack
-		return Status::ReadError;
+	if (waiting < 1) {
+		return Status::ZeroSizeError;
 	}
 
-	int ret{};
+	ReadBuffer.clear();
+	ReadBuffer.resize(static_cast<size_t>(waiting));
 
-	if (buffer.empty()) {
-		buffer.resize(static_cast<size_t>(bytes));
-		ret = sp_nonblocking_read(Port, &buffer[0], buffer.size());
+	int ret = sp_nonblocking_read(Port, &ReadBuffer[0], waiting);
+
+	if (ret > 0) {
+		std::copy(ReadBuffer.begin(), ReadBuffer.end(), std::back_inserter(buffer));
 	} else {
-		uint8_t readSize = buffer[2] - (buffer.size() - 3);
-
-		std::vector<uint8_t> newBuffer{};
-		newBuffer.resize(readSize);
-
-		ret = sp_nonblocking_read(Port, &newBuffer[0], newBuffer.size());
-
-		if (ret > 0) {
-			for (const uint8_t r : newBuffer) {
-				buffer.emplace_back(r);
-			}
-		}
-	}
-
-	if (ret <= 0) {
 		return Status::ReadError;
 	}
 
 #ifdef DEBUG_SERIAL
 	std::cout << "SerIo::Read:";
-	for (uint8_t c : buffer) {
+	for (uint8_t c : ReadBuffer) {
 		std::printf(" %02X", c);
 	}
 	std::cout << "\n";

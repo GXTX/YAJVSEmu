@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@ SdlIo::SdlIo(int deviceIndex, jvs_input_states *jvsInputs)
 {
 	Inputs = jvsInputs;
 
-	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
+	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
 	// For additional mappings use https://github.com/gabomdq/SDL_GameControllerDB
@@ -60,6 +60,11 @@ void SdlIo::Loop()
 				case SDL_CONTROLLERBUTTONUP:
 					ButtonPressHandler(&event.cbutton);
 				break;
+				case SDL_CONTROLLERDEVICEREMOVED:
+					// If the controller is removed then there's no reason to continue this thread.
+					// TODO: Support removing and attaching while progam is running.
+					std::cerr << "SdlIo::Loop: Device removed! Killing thread.\n";
+					return;
 				default: break;
 			}
 		}

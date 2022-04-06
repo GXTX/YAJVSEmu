@@ -1,7 +1,7 @@
 /*
     YAJVSEmu
     ----------------
-    Copyright (C) 2020-2021 wutno (https://github.com/GXTX)
+    Copyright (C) 2020-2022 wutno (https://github.com/GXTX)
 
 
     This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@ WiiIo::WiiIo(uint8_t players, jvs_input_states *jvsInputs)
 			xwii_iface_open(remote.interface, XWII_IFACE_ALL | XWII_IFACE_WRITABLE);
 			if (xwii_iface_opened(remote.interface) & XWII_IFACE_CORE && xwii_iface_opened(remote.interface) & XWII_IFACE_IR) {
 				remote.fd = xwii_iface_get_fd(remote.interface);
+				xwii_iface_watch(remote.interface, true);
 				std::puts("WiiIo::WiiIo: Successfully connected Wii Remote.");
 				break;
 			}
@@ -94,10 +95,15 @@ void WiiIo::Loop()
 			switch (event.type) {
 				case XWII_EVENT_KEY: ButtonPressHandler(remote.id, &event.v.key, remote.interface); break;
 				case XWII_EVENT_IR: IRMovementHandler(remote.id, event.v.abs, MovementValueType::Analog); break;
+				case XWII_EVENT_GONE:
+					// If the controller is removed then there's no reason to continue this thread.
+					// TODO: Support removing and attaching while progam is runnig.
+					std::cerr << "WiiIo::Loop: Device removed! Killing thread.\n";
+					return;
 				default: break;
 			}
 		}
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+		std::this_thread::sleep_for(std::chrono::microseconds(250));
 	}
 }
 
