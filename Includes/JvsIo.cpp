@@ -107,6 +107,11 @@ uint8_t JvsIo::Jvs_Command_14_GetCapabilities()
 	ResponseBuffer.emplace_back(16); // 16 bits per analog input channel
 	ResponseBuffer.emplace_back(0);
 
+	ResponseBuffer.emplace_back(JvsCapabilityCode::RotaryInputs);
+	ResponseBuffer.emplace_back(2); // number of analog input channels
+	ResponseBuffer.emplace_back(0); // 16 bits per analog input channel
+	ResponseBuffer.emplace_back(0);
+
 	// Output capabilities
 	ResponseBuffer.emplace_back(JvsCapabilityCode::GeneralPurposeOutputs);
 	ResponseBuffer.emplace_back(JVS_MAX_GPO); // number of outputs
@@ -198,6 +203,29 @@ uint8_t JvsIo::Jvs_Command_22_ReadAnalogInputs(uint8_t *data)
 		for (int j = 0; j != bytesPerAnalogInput; j++) {
 			// If a title asks for more analog input than we support, pad with dummy data
 			jvs_analog_input &analog_input = (i >= JVS_MAX_ANALOG) ? default_analog : Inputs.analog[i];
+			uint8_t value
+				= (j == 0) ? analog_input.GetByte0()
+				: (j == 1) ? analog_input.GetByte1()
+				: 0; // Pad any remaining bytes with 0, as we don't have that many inputs available
+			ResponseBuffer.emplace_back(value);
+		}
+	}
+
+	return 1;
+}
+
+uint8_t JvsIo::Jvs_Command_23_ReadRotaryInputs(uint8_t *data)
+{
+	static jvs_analog_input default_analog;
+	uint8_t nr_analog_inputs = data[1];
+
+	ResponseBuffer.emplace_back(JvsReportCode::Handled);
+
+	for (int i = 0; i != nr_analog_inputs; i++) {
+		const uint8_t bytesPerAnalogInput = 2;
+		for (int j = 0; j != bytesPerAnalogInput; j++) {
+			// If a title asks for more analog input than we support, pad with dummy data
+			jvs_analog_input &analog_input = (i >= 2) ? default_analog : Inputs.analog[i];
 			uint8_t value
 				= (j == 0) ? analog_input.GetByte0()
 				: (j == 1) ? analog_input.GetByte1()
@@ -424,6 +452,7 @@ void JvsIo::HandlePacket(std::vector<uint8_t>& packet)
 			case 0x20: i += Jvs_Command_20_ReadSwitchInputs(command_data); break;
 			case 0x21: i += Jvs_Command_21_ReadCoinInputs(command_data); break;
 			case 0x22: i += Jvs_Command_22_ReadAnalogInputs(command_data); break;
+			case 0x23: i += Jvs_Command_23_ReadRotaryInputs(command_data); break;
 			case 0x25: i += Jvs_Command_25_ReadScreenPosition(command_data); break;
 			case 0x26: i += Jvs_Command_26_ReadGeneralSwitchInputs(command_data); break;
 			case 0x30: i += Jvs_Command_30_CoinSubtractionOutput(command_data); break;

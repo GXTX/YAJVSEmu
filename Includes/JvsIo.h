@@ -272,6 +272,7 @@ private:
 	uint8_t Jvs_Command_20_ReadSwitchInputs(uint8_t *data);
 	uint8_t Jvs_Command_21_ReadCoinInputs(uint8_t *data);
 	uint8_t Jvs_Command_22_ReadAnalogInputs(uint8_t *data);
+	uint8_t Jvs_Command_23_ReadRotaryInputs(uint8_t *data);
 	uint8_t Jvs_Command_25_ReadScreenPosition(uint8_t *data);
 	uint8_t Jvs_Command_26_ReadGeneralSwitchInputs(uint8_t *data);
 	uint8_t Jvs_Command_30_CoinSubtractionOutput(uint8_t *data);
