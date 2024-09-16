@@ -315,7 +315,7 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 		ReadProgramDate = 0x02,
 		DipStatus = 0x03,
 		UNK_04 = 0x04,
-		UNK_18 = 0x18,
+		UniquePL = 0x18,
 	};
 
 	uint8_t subcommand = data[1];
@@ -355,21 +355,52 @@ uint8_t JvsIo::Jvs_Command_70_NamcoSpecific(uint8_t *data)
 				ResponseBuffer.emplace_back(value);
 			}
 			return 1;
-		case UNK_04: // Not sure? Appears to always return FF FF
+		case UNK_04:
 			ResponseBuffer.emplace_back(JvsReportCode::Handled);
 			{
+				// Could be misremembering, but someone said this is FCA memory test results
 				ResponseBuffer.emplace_back(0xFF);
 				ResponseBuffer.emplace_back(0xFF);
 			}
 			return 1;
-		case UNK_18: // No idea, seems to have variable length, should we hope we only get this command as a single?
+		case UniquePL:
 			ResponseBuffer.emplace_back(JvsReportCode::Handled);
 			{
 				// Wangan Midnight Tune 2B sends: 70 18 50 4C 14 FE
 				// (Real machine uses a FCA11) FCA10 reply: E0 00 04 01 01 01 07
 				// Taiko no tatsujin: 70 18 50 4C 14 40
-				// V328 MINI-JV: unk
-				// Is it possible this is actually a JVS status byte?
+#if 0
+                if (*pbVar3 != 0x18) {
+                  if (param_4 <= local_2c) {
+                    return local_2c;
+                  }
+                  iVar9 = snprintf(param_3 + local_2c,param_4 - local_2c,"  ?\n");
+                  return local_2c + iVar9;
+                }
+                if (local_2c < param_4) {
+                  iVar9 = snprintf(param_3 + local_2c,param_4 - local_2c," Unique PL\n");
+                  local_2c = local_2c + iVar9;
+                }
+                bVar8 = bVar8 - 6;
+                bVar6 = *local_18;
+                pbVar5 = pbVar5 + 6;
+                if (bVar6 != 1) goto joined_r0x0854dfd5;
+                pbVar3 = local_18 + 2;
+                if (local_18[1] == 0) {
+                  local_18 = pbVar3;
+                  if (local_2c < param_4) {
+                    iVar9 = snprintf(param_3 + local_2c,param_4 - local_2c,"  Stop\n");
+                    local_2c = local_2c + iVar9;
+                  }
+                }
+                else {
+                  local_18 = pbVar3;
+                  if (local_2c < param_4) {
+                    iVar9 = snprintf(param_3 + local_2c,param_4 - local_2c,"  Start\n");
+                    local_2c = local_2c + iVar9;
+                  }
+                }
+#endif
 				ResponseBuffer.emplace_back(0x01);
 			}
 			return 5;
